@@ -1,0 +1,132 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+
+  :root {
+    --sidebar-w: 260px;
+    --header-h: 64px;
+  }
+
+  html { font-size: 14px; scroll-behavior: smooth; }
+
+  body {
+    @apply bg-gray-50 text-gray-800 font-sans antialiased;
+    transition: background-color .3s, color .3s;
+  }
+  .dark body {
+    @apply bg-gray-950 text-gray-100;
+  }
+
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { @apply bg-transparent; }
+  ::-webkit-scrollbar-thumb { @apply bg-gray-300 dark:bg-gray-600 rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-gray-400 dark:bg-gray-500; }
+}
+
+@layer components {
+  /* Cards */
+  .card {
+    @apply bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700
+           rounded-xl shadow-sm transition-colors duration-300;
+  }
+  .card-header {
+    @apply px-5 py-4 border-b border-gray-200 dark:border-gray-700
+           flex items-center justify-between flex-wrap gap-3;
+  }
+  .card-body   { @apply p-5; }
+  .card-footer { @apply px-5 py-3 border-t border-gray-200 dark:border-gray-700; }
+
+  /* Table */
+  .tbl { @apply w-full text-sm border-collapse; }
+  .tbl thead th {
+    @apply bg-gray-50 dark:bg-gray-800 px-4 py-3
+           text-left text-xs font-bold uppercase tracking-wide
+           text-gray-500 dark:text-gray-400
+           border-b-2 border-gray-200 dark:border-gray-700 whitespace-nowrap;
+  }
+  .tbl tbody tr {
+    @apply border-b border-gray-100 dark:border-gray-800
+           hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors;
+  }
+  .tbl tbody tr:last-child { @apply border-b-0; }
+  .tbl td { @apply px-4 py-3 text-gray-700 dark:text-gray-300 align-middle; }
+
+  /* Buttons */
+  .btn { @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-200 cursor-pointer border-none outline-none whitespace-nowrap; }
+  .btn-primary { @apply bg-orange text-white hover:bg-orange-dark shadow-sm hover:shadow-md hover:-translate-y-px; }
+  .btn-success { @apply bg-brand-green text-white hover:bg-brand-green-dark shadow-sm hover:-translate-y-px; }
+  .btn-danger  { @apply bg-brand-red text-white hover:opacity-90 hover:-translate-y-px; }
+  .btn-info    { @apply bg-brand-blue text-white hover:opacity-90 hover:-translate-y-px; }
+  .btn-ghost   { @apply bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:border-orange hover:text-orange; }
+  .btn-outline { @apply bg-transparent border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-orange hover:text-orange; }
+  .btn-sm  { @apply px-3 py-1.5 text-xs; }
+  .btn-xs  { @apply px-2 py-1 text-xs rounded-md; }
+  .btn-lg  { @apply px-5 py-2.5 text-base; }
+  .btn-icon{ @apply w-9 h-9 p-0 justify-center; }
+
+  /* Badges */
+  .badge        { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold; }
+  .badge-active { @apply bg-brand-green-light text-brand-green-dark; }
+  .badge-inactive{ @apply bg-brand-red-light text-brand-red; }
+  .badge-pending{ @apply bg-orange-light text-orange-dark; }
+  .badge-info   { @apply bg-brand-blue-light text-brand-blue; }
+
+  /* Forms */
+  .form-group  { @apply mb-4; }
+  .form-label  { @apply block text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5; }
+  .form-req    { @apply text-brand-red ml-0.5; }
+  .form-control{
+    @apply w-full px-3 py-2.5 text-sm rounded-lg border border-gray-200 dark:border-gray-700
+           bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200
+           focus:outline-none focus:ring-2 focus:ring-orange/30 focus:border-orange
+           placeholder-gray-400 dark:placeholder-gray-600 transition-all duration-200;
+  }
+  .form-hint { @apply text-xs text-gray-400 dark:text-gray-500 mt-1; }
+
+  /* Toggle */
+  .tog         { @apply relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer; }
+  .tog.on      { @apply bg-brand-green; }
+  .tog.off     { @apply bg-gray-300 dark:bg-gray-600; }
+  .tog-thumb   { @apply inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform; }
+  .tog.on  .tog-thumb { @apply translate-x-6; }
+  .tog.off .tog-thumb { @apply translate-x-1; }
+
+  /* Stat cards */
+  .stat-card { @apply card p-5 flex items-center gap-4 hover:-translate-y-1 transition-transform cursor-default; }
+  .stat-ico  { @apply w-13 h-13 rounded-xl flex items-center justify-center text-xl flex-shrink-0; }
+  .stat-val  { @apply font-title font-black text-2xl text-gray-900 dark:text-white leading-none; }
+  .stat-lbl  { @apply text-xs text-gray-500 dark:text-gray-400 mt-1; }
+
+  /* Color variants for stat-ico */
+  .ico-orange { @apply bg-orange-light text-orange; }
+  .ico-green  { @apply bg-brand-green-light text-brand-green; }
+  .ico-blue   { @apply bg-brand-blue-light text-brand-blue; }
+  .ico-purple { @apply bg-brand-purple-light text-brand-purple; }
+  .ico-red    { @apply bg-brand-red-light text-brand-red; }
+
+  /* Page */
+  .page-title { @apply font-title font-black text-2xl text-gray-900 dark:text-white flex items-center gap-3; }
+  .page-sub   { @apply text-sm text-gray-500 dark:text-gray-400 mt-1; }
+}
+
+/* Sidebar */
+.sidebar-link {
+  @apply flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer
+         text-gray-600 dark:text-gray-400 text-sm font-medium
+         hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white
+         transition-all duration-150 whitespace-nowrap overflow-hidden;
+}
+.sidebar-link.active {
+  @apply bg-orange-light dark:bg-orange/15 text-orange font-bold;
+}
+
+/* Dark mode helpers */
+.dark .card        { @apply bg-gray-900 border-gray-700; }
+.dark .card-header { @apply border-gray-700; }
+.dark .card-footer { @apply border-gray-700; }
+.dark .tbl thead th { @apply bg-gray-800 border-gray-700 text-gray-400; }
+.dark .tbl tbody tr { @apply border-gray-800 hover:bg-gray-800/50; }
+.dark .tbl td { @apply text-gray-300; }
