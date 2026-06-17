@@ -15,6 +15,8 @@ import InformationsGenerales from './pages/Sales/InformationsGenerales'
 import ProgrammeClient       from './pages/Sales/ProgrammeClient'
 import Cotation              from './pages/Sales/Cotation'
 import FacturePro            from './pages/Sales/FacturePro'
+import CotationLibre         from './pages/Sales/CotationLibre'
+import FactureProLibre       from './pages/Sales/FactureProLibre'
 
 // Booking
 import Brieffings            from './pages/Booking/Brieffings'
@@ -84,8 +86,8 @@ export default function App() {
       <Route path="/sales/pc"               element={<RequireAuth depts={SALES}><ProgrammeClient /></RequireAuth>} />
       <Route path="/sales/cotation"         element={<RequireAuth depts={SALES}><Cotation /></RequireAuth>} />
       <Route path="/sales/facture-pro"      element={<RequireAuth depts={SALES}><FacturePro /></RequireAuth>} />
-      <Route path="/sales/cotation-libre"   element={PH('Cotation Libre',['SITRAC','Sales','Cotation Libre'],'Cotations libres non liées à un dossier',Calculator,SALES)} />
-      <Route path="/sales/facturepro-libre" element={PH('Facture Pro Libre',['SITRAC','Sales','Facture Pro Libre'],'Factures proforma libres',FileText,SALES)} />
+      <Route path="/sales/cotation-libre"   element={<RequireAuth depts={SALES}><CotationLibre /></RequireAuth>} />
+      <Route path="/sales/facturepro-libre" element={<RequireAuth depts={SALES}><FactureProLibre /></RequireAuth>} />
 
       {/* Booking */}
       <Route path="/booking/briefings"    element={<RequireAuth depts={BOOKING}><Brieffings /></RequireAuth>} />

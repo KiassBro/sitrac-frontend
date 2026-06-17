@@ -170,6 +170,18 @@ export const salesAPI = {
   saveFacturePro:  (pcId, data, exists) =>
     exists ? api.put(`/sales/programme-clients/${pcId}/facture-pro/`, data)
            : api.post(`/sales/programme-clients/${pcId}/facture-pro/`, data),
+
+  // ── Cotation Libre ──────────────────────────────────────────
+  getCotationsLibres: (params = '') => api.get(`/sales/cotations-libres/${params}`),
+  createCotLibre:     (data)        => api.post('/sales/cotations-libres/', data),
+  updateCotLibre:     (id, data)    => api.put(`/sales/cotations-libres/${id}/`, data),
+  deleteCotLibre:     (id)          => api.delete(`/sales/cotations-libres/${id}/`),
+
+  // ── Facture Pro Libre ───────────────────────────────────────
+  getFPLibres:   (params = '') => api.get(`/sales/factures-pro-libres/${params}`),
+  createFPLibre: (data)        => api.post('/sales/factures-pro-libres/', data),
+  updateFPLibre: (id, data)    => api.put(`/sales/factures-pro-libres/${id}/`, data),
+  deleteFPLibre: (id)          => api.delete(`/sales/factures-pro-libres/${id}/`),
 }
 
 export const bookingAPI = {
