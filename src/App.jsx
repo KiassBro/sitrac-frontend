@@ -21,12 +21,15 @@ import FactureProLibre       from './pages/Sales/FactureProLibre'
 // Booking
 import Brieffings            from './pages/Booking/Brieffings'
 import Provision             from './pages/Booking/Provision'
+import DossierVenteBooking   from './pages/Booking/DossierVente'
 
 // Finance
 import Paiement              from './pages/Finance/Paiement'
 import FactureDefinitive     from './pages/Finance/FactureDefinitive'
 import Cloture               from './pages/Finance/Cloture'
 import Recu                  from './pages/Finance/Recu'
+import DossierVenteFinance   from './pages/Finance/DossierVente'
+import DossierBookingFinance from './pages/Finance/DossierBooking'
 
 // Administration
 import AdminDashboard        from './pages/Admin/AdminDashboard'
@@ -37,6 +40,10 @@ import Statistiques          from './pages/Admin/Statistiques'
 
 // Superviseur
 import Journal               from './pages/Superviseur/Journal'
+import SuperviseurInsert     from './pages/Superviseur/Insert'
+import SuperviseurUpdate     from './pages/Superviseur/Update'
+import SuperviseurDelete     from './pages/Superviseur/Delete'
+import SuperviseurStats      from './pages/Superviseur/Stats'
 
 // Icônes pour les routes DossierVente (lecture seule)
 import { Folder, FolderOpen, Calculator, FileText, PlusCircle, Edit, Trash2, BarChart2 } from 'lucide-react'
@@ -92,15 +99,22 @@ export default function App() {
       {/* Booking */}
       <Route path="/booking/briefings"    element={<RequireAuth depts={BOOKING}><Brieffings /></RequireAuth>} />
       <Route path="/booking/provision"    element={<RequireAuth depts={BOOKING}><Provision /></RequireAuth>} />
-      <Route path="/booking/dossier-vente" element={PH('Dossiers de Vente',['SITRAC','Booking','Lecture'],'Accès lecture seule (RG 20)',Folder,BOOKING)} />
+      <Route path="/booking/dossier-vente"
+      element={<RequireAuth depts={BOOKING}><DossierVenteBooking /></RequireAuth>} />
 
       {/* Finance */}
       <Route path="/finance/paiement"     element={<RequireAuth depts={FINANCE}><Paiement /></RequireAuth>} />
       <Route path="/finance/facture-def"  element={<RequireAuth depts={FINANCE}><FactureDefinitive /></RequireAuth>} />
       <Route path="/finance/cloture"      element={<RequireAuth depts={FINANCE}><Cloture /></RequireAuth>} />
       <Route path="/finance/recu"         element={<RequireAuth depts={FINANCE}><Recu /></RequireAuth>} />
-      <Route path="/finance/dossier-vente"    element={PH('Dossiers de Vente',['SITRAC','Finance','Lecture'],'Accès lecture seule (RG 21)',Folder,FINANCE)} />
-      <Route path="/finance/dossier-booking"  element={PH('Dossiers Booking',['SITRAC','Finance','Lecture'],'Accès lecture seule (RG 21)',FolderOpen,FINANCE)} />
+      <Route path="/finance/dossier-vente"
+      element={<RequireAuth depts={FINANCE}><DossierVenteFinance /></RequireAuth>} />
+      <Route path="/finance/dossier-booking"
+      element={<RequireAuth depts={FINANCE}><DossierBookingFinance /></RequireAuth>} />  
+      <Route path="/finance/dossier-vente"
+      element={<RequireAuth depts={FINANCE}><DossierVenteFinance /></RequireAuth>} />
+      <Route path="/finance/dossier-booking"
+      element={<RequireAuth depts={FINANCE}><DossierBookingFinance /></RequireAuth>} /> 
 
       {/* Administration */}
       <Route path="/admin"               element={<RequireAuth depts={ADMIN}><AdminDashboard /></RequireAuth>} />
@@ -111,10 +125,10 @@ export default function App() {
 
       {/* Superviseur */}
       <Route path="/superviseur"         element={<RequireAuth depts={SUPER}><Journal /></RequireAuth>} />
-      <Route path="/superviseur/insert"  element={PH('INSERT',['SITRAC','Superviseur','INSERT'],'Journal des insertions',PlusCircle,SUPER)} />
-      <Route path="/superviseur/update"  element={PH('UPDATE',['SITRAC','Superviseur','UPDATE'],'Journal des modifications',Edit,SUPER)} />
-      <Route path="/superviseur/delete"  element={PH('DELETE',['SITRAC','Superviseur','DELETE'],'Journal des suppressions',Trash2,SUPER)} />
-      <Route path="/superviseur/stats"   element={PH('Statistiques Actions',['SITRAC','Superviseur','Statistiques'],"Statistiques d'audit",BarChart2,SUPER)} />
+      <Route path="/superviseur/insert"  element={<RequireAuth depts={SUPER}><SuperviseurInsert /></RequireAuth>} />
+      <Route path="/superviseur/update"  element={<RequireAuth depts={SUPER}><SuperviseurUpdate /></RequireAuth>} />
+      <Route path="/superviseur/delete"  element={<RequireAuth depts={SUPER}><SuperviseurDelete /></RequireAuth>} />
+      <Route path="/superviseur/stats"   element={<RequireAuth depts={SUPER}><SuperviseurStats /></RequireAuth>} />
 
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
