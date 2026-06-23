@@ -145,6 +145,7 @@ export const salesAPI = {
   toggleProg:      (id)          => api.patch(`/sales/programmes/${id}/toggle-actif/`),
 
   // Clients Leaders
+  getClient:       (id) => api.get(`/sales/clients/${id}/`),
   getClients:      (params = '') => api.get(`/sales/clients/${params}`),
   createClient:    (data)        => api.post('/sales/clients/', data),
   updateClient:    (id, data)    => api.patch(`/sales/clients/${id}/`, data),
