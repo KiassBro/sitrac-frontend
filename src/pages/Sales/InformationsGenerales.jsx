@@ -66,66 +66,97 @@ function GIPrintModal({ client, open, onClose }) {
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#1a1a1a;background:#fff}
-    .page{width:210mm;min-height:297mm;padding:12mm 15mm;margin:0 auto}
+    .page{width:210mm;min-height:297mm;padding:14mm 16mm;margin:0 auto}
+
+    /* En-tête */
     .header{display:flex;align-items:center;justify-content:space-between;
-            padding-bottom:10px;border-bottom:3px solid #F5A623;margin-bottom:14px}
+            padding-bottom:12px;border-bottom:2px solid #1a1a1a;margin-bottom:16px}
     .logo-area{display:flex;align-items:center;gap:10px}
-    .logo-img{width:58px;height:58px;object-fit:contain;border-radius:6px}
-    .company-name{font-size:20px;font-weight:900;color:#F5A623;letter-spacing:2px}
-    .company-sub{font-size:9px;color:#666;margin-top:1px}
-    .company-sub2{font-size:8px;color:#999}
-    .doc-info{text-align:right}
-    .doc-title{font-size:16px;font-weight:900;text-transform:uppercase;
-               letter-spacing:1px;color:#1a1a1a}
-    .doc-ref{font-size:9px;color:#888;margin-top:3px}
-    .banner{background:#1a1a1a;color:white;padding:9px 14px;border-radius:7px;
-            margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
-    .banner-name{font-size:15px;font-weight:900}
-    .banner-nat{font-size:9px;color:#ccc;margin-top:2px}
-    .badges{display:flex;gap:8px;align-items:center}
-    .badge-o{background:#F5A623;color:#1a1a1a;padding:3px 10px;
-             border-radius:20px;font-weight:700;font-size:10px}
-    .badge-d{background:#444;color:white;padding:3px 10px;
-             border-radius:20px;font-weight:700;font-size:10px}
-    .st{font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:1px;
-        color:#F5A623;border-bottom:1.5px solid #F5A623;padding-bottom:3px;margin:13px 0 8px}
-    .g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:7px 16px}
-    .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px 16px}
-    .g2{display:grid;grid-template-columns:1fr 1fr;gap:7px 12px}
+    .logo-img{width:56px;height:56px;object-fit:contain}
+    .co-name{font-size:20px;font-weight:900;color:#1a1a1a;letter-spacing:1px;line-height:1}
+    .co-sub{font-size:9px;color:#555;margin-top:3px}
+    .co-sys{font-size:8px;color:#888}
+    .doc-right{text-align:right}
+    .doc-title{font-size:15px;font-weight:900;text-transform:uppercase;
+               letter-spacing:2px;color:#1a1a1a;border-bottom:3px solid #F5A623;
+               padding-bottom:4px;display:inline-block}
+    .doc-ref{font-size:9px;color:#555;margin-top:5px}
+
+    /* Bannière client */
+    .banner{background:#1a1a1a;color:#fff;padding:10px 14px;
+            margin-bottom:16px;display:flex;align-items:center;
+            justify-content:space-between}
+    .bn-name{font-size:14px;font-weight:900;letter-spacing:.5px}
+    .bn-nat{font-size:9px;color:#bbb;margin-top:2px}
+    .bn-badges{display:flex;gap:8px}
+    .bn-badge{padding:3px 10px;font-size:10px;font-weight:700;border:1.5px solid #fff;color:#fff}
+    .bn-badge-o{background:#F5A623;border-color:#F5A623;color:#1a1a1a}
+
+    /* Titre de section */
+    .st{font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:1.5px;
+        color:#fff;background:#1a1a1a;padding:4px 10px;margin:14px 0 8px;
+        display:inline-block}
+    .st-line{border-bottom:1px solid #ddd;margin-bottom:8px}
+
+    /* Grilles */
+    .g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px 14px}
+    .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px 14px}
+    .g2{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px}
+
+    /* Champs */
     .fl{font-size:7.5px;color:#888;text-transform:uppercase;
         letter-spacing:.5px;margin-bottom:2px;font-weight:700}
-    .fv{font-size:10px;font-weight:600;border-bottom:1px solid #e8e8e8;
-        padding-bottom:3px;min-height:15px;line-height:1.4}
-    .fv.empty{color:#bbb;font-style:italic;font-weight:400}
-    .vol-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    .vol-box{border:1px solid #e5e5e5;border-radius:7px;padding:9px}
-    .vol-hdr{display:inline-flex;align-items:center;gap:6px;font-size:9px;
-             font-weight:700;padding:4px 9px;border-radius:5px;margin-bottom:8px}
-    .vol-hdr-arr{background:#27AE60;color:white}
-    .vol-hdr-dep{background:#F5A623;color:#1a1a1a}
+    .fv{font-size:10px;font-weight:600;padding-bottom:3px;min-height:16px;
+        border-bottom:1px solid #e0e0e0;line-height:1.4}
+    .fv.em{color:#bbb;font-style:italic;font-weight:400}
+
+    /* Blocs de vol */
+    .vol-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .vol-box{border:1.5px solid #1a1a1a;padding:10px}
+    .vol-hdr{font-size:9px;font-weight:900;text-transform:uppercase;
+             letter-spacing:1px;padding:3px 8px;margin-bottom:8px;
+             display:inline-block;background:#F5A623;color:#1a1a1a}
+    .vol-hdr2{background:#1a1a1a;color:#fff}
     .vol-inner{display:grid;grid-template-columns:1fr 1fr;gap:5px 10px}
-    .pax-tbl{width:100%;border-collapse:collapse;font-size:10px}
+
+    /* Tableau PAX */
+    .pax-tbl{width:100%;border-collapse:collapse;font-size:10px;margin-top:4px}
     .pax-tbl thead tr{background:#1a1a1a}
-    .pax-tbl thead th{padding:5px 7px;text-align:left;font-size:8px;
-                      font-weight:700;text-transform:uppercase;color:white;letter-spacing:.5px}
-    .pax-tbl tbody tr:nth-child(even){background:#f8f8f8}
-    .pax-tbl tbody td{padding:5px 7px;border-bottom:1px solid #f0f0f0}
-    .pax-tbl tfoot td{padding:5px 7px;background:#F5A623;color:#1a1a1a;font-weight:700}
-    .leader-row{background:#fff8e1!important}
-    .sig-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;
-              margin-top:22px;padding-top:14px;border-top:2px solid #F5A623}
-    .sig-line{border-bottom:1px solid #1a1a1a;height:38px;margin-bottom:7px}
-    .sig-lbl{font-size:8px;color:#666;text-transform:uppercase;
-             letter-spacing:.5px;text-align:center}
-    .footer{text-align:center;font-size:8px;color:#bbb;margin-top:18px;
-            padding-top:9px;border-top:1px solid #eee;line-height:1.6}
+    .pax-tbl thead th{padding:6px 8px;text-align:left;font-size:8px;
+                      font-weight:700;text-transform:uppercase;
+                      letter-spacing:.5px;color:#fff}
+    .pax-tbl tbody tr{border-bottom:1px solid #e8e8e8}
+    .pax-tbl tbody tr:nth-child(even){background:#f5f5f5}
+    .pax-tbl tbody td{padding:6px 8px}
+    .pax-tbl tfoot td{padding:6px 8px;background:#F5A623;
+                      color:#1a1a1a;font-weight:700;font-size:10px}
+    .leader-row{background:#f5f5f5!important;border-left:3px solid #F5A623}
+    .leader-lbl{font-size:8px;font-weight:900;color:#1a1a1a;
+                text-transform:uppercase;letter-spacing:.5px}
+
+    /* Signatures */
+    .sig-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:30px;
+              margin-top:24px;padding-top:14px;border-top:2px solid #1a1a1a}
+    .sig-box{text-align:center}
+    .sig-line{border-bottom:1.5px solid #1a1a1a;height:40px;margin-bottom:6px}
+    .sig-lbl{font-size:8px;color:#555;text-transform:uppercase;
+             letter-spacing:.5px;font-weight:700}
+
+    /* Footer */
+    .footer{text-align:center;font-size:8px;color:#888;margin-top:20px;
+            padding-top:8px;border-top:1px solid #ddd;line-height:1.6}
+    .footer-line{width:30px;height:2px;background:#F5A623;
+                 margin:0 auto 8px;display:block}
+
     @media print{
       body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-      .page{padding:8mm 12mm}
+      .page{padding:10mm 12mm}
     }
   </style>
 </head>
-<body>${printRef.current?.innerHTML || ''}</body>
+<body>
+${printRef.current?.innerHTML || ''}
+</body>
 </html>`)
     win.document.close()
     win.onload = () => { win.focus(); win.print() }
@@ -142,8 +173,9 @@ function GIPrintModal({ client, open, onClose }) {
       <div style={{fontSize:'7.5px',color:'#888',textTransform:'uppercase',
         letterSpacing:'.5px',marginBottom:'2px',fontWeight:'700'}}>{label}</div>
       <div style={{fontSize:'10px',fontWeight:value?'600':'400',
-        borderBottom:'1px solid #e8e8e8',paddingBottom:'3px',minHeight:'15px',
-        lineHeight:'1.4',color:value?'#1a1a1a':'#bbb',fontStyle:value?'normal':'italic'}}>
+        paddingBottom:'3px',minHeight:'16px',lineHeight:'1.4',
+        borderBottom:'1px solid #e0e0e0',
+        color:value?'#1a1a1a':'#bbb',fontStyle:value?'normal':'italic'}}>
         {value || '—'}
       </div>
     </div>
@@ -163,72 +195,81 @@ function GIPrintModal({ client, open, onClose }) {
     >
       <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-4 overflow-auto max-h-[74vh]">
         <div ref={printRef}>
-          <div style={{background:'white',maxWidth:'794px',margin:'0 auto',
-            padding:'24px 32px',fontFamily:'Arial,Helvetica,sans-serif',
+          <div style={{background:'#fff',maxWidth:'794px',margin:'0 auto',
+            padding:'28px 36px',fontFamily:'Arial,Helvetica,sans-serif',
             fontSize:'11px',color:'#1a1a1a'}}>
 
-            {/* ── En-tête avec VRAI LOGO ── */}
-            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',
-              paddingBottom:'10px',borderBottom:'3px solid #F5A623',marginBottom:'14px'}}>
+            {/* ── En-tête ── */}
+            <div style={{display:'flex',alignItems:'center',
+              justifyContent:'space-between',paddingBottom:'12px',
+              borderBottom:'2px solid #1a1a1a',marginBottom:'16px'}}>
               <div style={{display:'flex',alignItems:'center',gap:'12px'}}>
-                {/* ✅ Logo original Ramartour en base64 */}
-                <img
-                  src="/logo.jpg"
-                  alt="Ramartour Madagascar"
-                  style={{width:'60px',height:'60px',objectFit:'contain',borderRadius:'6px'}}
-                />
+                <img src="/logo.jpg" alt="Ramartour"
+                  style={{width:'56px',height:'56px',objectFit:'contain'}}/>
                 <div>
-                  <div style={{fontSize:'19px',fontWeight:'900',color:'#F5A623',
-                    letterSpacing:'2px'}}>RAMARTOUR</div>
-                  <div style={{fontSize:'9px',color:'#666',marginTop:'1px'}}>Madagascar</div>
-                  <div style={{fontSize:'8px',color:'#999'}}>
+                  <div style={{fontSize:'20px',fontWeight:'900',
+                    color:'#1a1a1a',letterSpacing:'1px',lineHeight:'1'}}>
+                    RAMARTOUR
+                  </div>
+                  <div style={{fontSize:'9px',color:'#555',marginTop:'3px'}}>
+                    Madagascar
+                  </div>
+                  <div style={{fontSize:'8px',color:'#888'}}>
                     Système de Traitement des Relations Clients
                   </div>
                 </div>
               </div>
               <div style={{textAlign:'right'}}>
-                <div style={{fontSize:'16px',fontWeight:'900',textTransform:'uppercase',
-                  letterSpacing:'1px',color:'#1a1a1a'}}>Informations Générales</div>
-                <div style={{fontSize:'9px',color:'#888',marginTop:'3px'}}>
-                  Réf. : {refDoc}
+                <div style={{fontSize:'15px',fontWeight:'900',
+                  textTransform:'uppercase',letterSpacing:'2px',
+                  color:'#1a1a1a',borderBottom:'3px solid #F5A623',
+                  paddingBottom:'4px',display:'inline-block'}}>
+                  Informations Générales
                 </div>
-                <div style={{fontSize:'9px',color:'#888'}}>Date : {today}</div>
+                <div style={{fontSize:'9px',color:'#555',marginTop:'6px'}}>
+                  Réf. : <strong>{refDoc}</strong>
+                </div>
+                <div style={{fontSize:'9px',color:'#555'}}>
+                  Date : {today}
+                </div>
               </div>
             </div>
 
             {/* ── Bannière client ── */}
-            <div style={{background:'#1a1a1a',color:'white',padding:'9px 14px',
-              borderRadius:'7px',marginBottom:'14px',display:'flex',
-              alignItems:'center',justifyContent:'space-between'}}>
+            <div style={{background:'#1a1a1a',color:'#fff',padding:'10px 14px',
+              marginBottom:'16px',display:'flex',alignItems:'center',
+              justifyContent:'space-between'}}>
               <div>
-                <div style={{fontSize:'15px',fontWeight:'900'}}>
+                <div style={{fontSize:'14px',fontWeight:'900',letterSpacing:'.5px'}}>
                   {client.titre} {client.nom}
                 </div>
-                <div style={{fontSize:'9px',color:'#ccc',marginTop:'2px'}}>
+                <div style={{fontSize:'9px',color:'#bbb',marginTop:'2px'}}>
                   Nationalité : {client.nationalite || '—'}
                 </div>
               </div>
-              <div style={{display:'flex',gap:'8px',alignItems:'center'}}>
-                <span style={{background:'#F5A623',color:'#1a1a1a',padding:'3px 10px',
-                  borderRadius:'20px',fontWeight:'700',fontSize:'10px'}}>
+              <div style={{display:'flex',gap:'8px'}}>
+                <span style={{padding:'3px 10px',fontSize:'10px',fontWeight:'700',
+                  background:'#F5A623',color:'#1a1a1a',border:'1.5px solid #F5A623'}}>
                   {client.type_groupe || 'Individuel'}
                 </span>
-                <span style={{background:'#444',color:'white',padding:'3px 10px',
-                  borderRadius:'20px',fontWeight:'700',fontSize:'10px'}}>
+                <span style={{padding:'3px 10px',fontSize:'10px',fontWeight:'700',
+                  color:'#fff',border:'1.5px solid #fff'}}>
                   {client.nb_pax || 1} PAX
                 </span>
               </div>
             </div>
 
             {/* ── 1. État Civil ── */}
-            <div style={{fontSize:'10px',fontWeight:'900',textTransform:'uppercase',
-              letterSpacing:'1px',color:'#F5A623',borderBottom:'1.5px solid #F5A623',
-              paddingBottom:'3px',margin:'13px 0 8px'}}>1. État Civil</div>
+            <div style={{fontSize:'9px',fontWeight:'900',textTransform:'uppercase',
+              letterSpacing:'1.5px',color:'#fff',background:'#1a1a1a',
+              padding:'4px 10px',marginBottom:'10px',display:'inline-block'}}>
+              1. État Civil
+            </div>
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',
-              gap:'7px 16px',marginBottom:'4px'}}>
-              <FV label="Titre"             value={client.titre}/>
-              <FV label="Nom complet"       value={client.nom}/>
-              <FV label="Nationalité"       value={client.nationalite}/>
+              gap:'8px 14px',marginBottom:'4px'}}>
+              <FV label="Titre"              value={client.titre}/>
+              <FV label="Nom complet"        value={client.nom}/>
+              <FV label="Nationalité"        value={client.nationalite}/>
               <FV label="Date de naissance"
                 value={client.date_naissance ? fmtDate(client.date_naissance) : null}/>
               <FV label="N° Passeport / CIN" value={client.num_document}/>
@@ -241,11 +282,13 @@ function GIPrintModal({ client, open, onClose }) {
             </div>
 
             {/* ── 2. Contacts & Urgence ── */}
-            <div style={{fontSize:'10px',fontWeight:'900',textTransform:'uppercase',
-              letterSpacing:'1px',color:'#F5A623',borderBottom:'1.5px solid #F5A623',
-              paddingBottom:'3px',margin:'13px 0 8px'}}>2. Contacts &amp; Urgence</div>
+            <div style={{fontSize:'9px',fontWeight:'900',textTransform:'uppercase',
+              letterSpacing:'1.5px',color:'#fff',background:'#1a1a1a',
+              padding:'4px 10px',margin:'14px 0 10px',display:'inline-block'}}>
+              2. Contacts &amp; Urgence
+            </div>
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',
-              gap:'7px 16px',marginBottom:'4px'}}>
+              gap:'8px 14px',marginBottom:'4px'}}>
               <FV label="Téléphone"         value={client.telephone}/>
               <FV label="Email"             value={client.email}/>
               <FV label="Observation méd."  value={client.observation_med}/>
@@ -254,25 +297,17 @@ function GIPrintModal({ client, open, onClose }) {
             </div>
 
             {/* ── 3. Informations de Vol ── */}
-            <div style={{fontSize:'10px',fontWeight:'900',textTransform:'uppercase',
-              letterSpacing:'1px',color:'#F5A623',borderBottom:'1.5px solid #F5A623',
-              paddingBottom:'3px',margin:'13px 0 8px'}}>3. Informations de Vol</div>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',
-              gap:'10px',marginBottom:'6px'}}>
+            <div style={{fontSize:'9px',fontWeight:'900',textTransform:'uppercase',
+              letterSpacing:'1.5px',color:'#fff',background:'#1a1a1a',
+              padding:'4px 10px',margin:'14px 0 10px',display:'inline-block'}}>
+              3. Informations de Vol
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px'}}>
               {/* Vol Arrivée */}
-              <div style={{border:'1px solid #e5e5e5',borderRadius:'7px',padding:'9px'}}>
-                <div style={{display:'inline-flex',alignItems:'center',gap:'6px',
-                  background:'#27AE60',color:'white',fontSize:'9px',fontWeight:'700',
-                  padding:'4px 9px',borderRadius:'5px',marginBottom:'8px'}}>
-                  {/* Icône avion SVG */}
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
-                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21 4 19 2c-2-2-4-2-5.5-.5L10 5
-                      1.8 6.2c-.5.1-.9.6-.6 1.1l1.5 2.5c.2.4.7.5 1.1.3L8 8.5l-1 4.5
-                      -3 1.5c-.4.2-.5.7-.3 1.1l.8 1.4c.3.5.9.6 1.3.3L9 15l3.5 4.5
-                      c.3.4.8.5 1.2.3l2.5-1c.6-.2.8-.9.6-1.6z"/>
-                  </svg>
+              <div style={{border:'1.5px solid #1a1a1a',padding:'10px'}}>
+                <div style={{fontSize:'9px',fontWeight:'900',textTransform:'uppercase',
+                  letterSpacing:'1px',padding:'3px 8px',marginBottom:'8px',
+                  display:'inline-block',background:'#F5A623',color:'#1a1a1a'}}>
                   Vol d'Arrivée
                 </div>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'5px 10px'}}>
@@ -284,20 +319,10 @@ function GIPrintModal({ client, open, onClose }) {
                 </div>
               </div>
               {/* Vol Départ */}
-              <div style={{border:'1px solid #e5e5e5',borderRadius:'7px',padding:'9px'}}>
-                <div style={{display:'inline-flex',alignItems:'center',gap:'6px',
-                  background:'#F5A623',color:'#1a1a1a',fontSize:'9px',fontWeight:'700',
-                  padding:'4px 9px',borderRadius:'5px',marginBottom:'8px'}}>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
-                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07
-                      A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.41
-                      A2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81
-                      a2 2 0 0 1-.45 2.11L7.91 8.54a16 16 0 0 0 6.56 6.56l.95-.95
-                      a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7
-                      A2 2 0 0 1 22 16.92z"/>
-                  </svg>
+              <div style={{border:'1.5px solid #1a1a1a',padding:'10px'}}>
+                <div style={{fontSize:'9px',fontWeight:'900',textTransform:'uppercase',
+                  letterSpacing:'1px',padding:'3px 8px',marginBottom:'8px',
+                  display:'inline-block',background:'#1a1a1a',color:'#fff'}}>
                   Vol de Départ
                 </div>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'5px 10px'}}>
@@ -311,94 +336,109 @@ function GIPrintModal({ client, open, onClose }) {
             </div>
 
             {/* ── 4. Liste PAX ── */}
-            <div style={{fontSize:'10px',fontWeight:'900',textTransform:'uppercase',
-              letterSpacing:'1px',color:'#F5A623',borderBottom:'1.5px solid #F5A623',
-              paddingBottom:'3px',margin:'13px 0 8px'}}>
-              4. Liste des Participants — {client.nb_pax||1} PAX total
+            <div style={{fontSize:'9px',fontWeight:'900',textTransform:'uppercase',
+              letterSpacing:'1.5px',color:'#fff',background:'#1a1a1a',
+              padding:'4px 10px',margin:'14px 0 10px',display:'inline-block'}}>
+              4. Participants — {client.nb_pax || 1} PAX total
             </div>
             <table style={{width:'100%',borderCollapse:'collapse',fontSize:'10px'}}>
               <thead>
                 <tr style={{background:'#1a1a1a'}}>
                   {['#','Titre','Nom complet','Nationalité',
-                    'N° Passeport / CIN','Téléphone','Email'].map(h => (
-                    <th key={h} style={{padding:'5px 7px',textAlign:'left',fontSize:'8px',
-                      fontWeight:'700',textTransform:'uppercase',
-                      color:'white',letterSpacing:'.5px'}}>{h}</th>
+                    'N° Passeport/CIN','Téléphone','Email'].map(h => (
+                    <th key={h} style={{padding:'6px 8px',textAlign:'left',
+                      fontSize:'8px',fontWeight:'700',textTransform:'uppercase',
+                      letterSpacing:'.5px',color:'#fff'}}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {/* Leader */}
-                <tr style={{background:'#fff8e1'}}>
-                  <td style={{padding:'5px 7px',fontWeight:'700',color:'#e65100',
-                    fontSize:'8px'}}>LEAD.</td>
-                  <td style={{padding:'5px 7px'}}>{client.titre}</td>
-                  <td style={{padding:'5px 7px',fontWeight:'700'}}>
+                <tr style={{background:'#f5f5f5',borderLeft:'3px solid #F5A623',
+                  borderBottom:'1px solid #e8e8e8'}}>
+                  <td style={{padding:'6px 8px',fontSize:'8px',fontWeight:'900',
+                    textTransform:'uppercase',letterSpacing:'.5px',color:'#1a1a1a'}}>
+                    LEAD.
+                  </td>
+                  <td style={{padding:'6px 8px'}}>{client.titre}</td>
+                  <td style={{padding:'6px 8px',fontWeight:'700'}}>
                     {client.nom}
-                    <span style={{fontSize:'7.5px',color:'#F5A623',
-                      fontWeight:'800',marginLeft:'5px'}}>(LEADER)</span>
+                    <span style={{fontSize:'7.5px',background:'#F5A623',
+                      color:'#1a1a1a',fontWeight:'900',padding:'1px 5px',
+                      marginLeft:'5px',textTransform:'uppercase',letterSpacing:'.5px'}}>
+                      Leader
+                    </span>
                   </td>
-                  <td style={{padding:'5px 7px'}}>{client.nationalite||'—'}</td>
-                  <td style={{padding:'5px 7px',fontFamily:'monospace',fontSize:'9px'}}>
-                    {client.num_document||'—'}
+                  <td style={{padding:'6px 8px'}}>{client.nationalite || '—'}</td>
+                  <td style={{padding:'6px 8px',fontFamily:'monospace',fontSize:'9px'}}>
+                    {client.num_document || '—'}
                   </td>
-                  <td style={{padding:'5px 7px'}}>{client.telephone||'—'}</td>
-                  <td style={{padding:'5px 7px',fontSize:'9px'}}>{client.email||'—'}</td>
+                  <td style={{padding:'6px 8px'}}>{client.telephone || '—'}</td>
+                  <td style={{padding:'6px 8px',fontSize:'9px'}}>
+                    {client.email || '—'}
+                  </td>
                 </tr>
                 {/* PAX */}
                 {pax.length === 0 ? (
                   <tr>
-                    <td colSpan={7} style={{padding:'8px 7px',color:'#aaa',
-                      fontStyle:'italic',textAlign:'center',fontSize:'9px'}}>
+                    <td colSpan={7} style={{padding:'8px',color:'#aaa',
+                      fontStyle:'italic',textAlign:'center',fontSize:'9px',
+                      borderBottom:'1px solid #e8e8e8'}}>
                       Aucun participant PAX enregistré
                     </td>
                   </tr>
                 ) : pax.map((p, i) => (
-                  <tr key={p.id||i}
-                    style={{background: i%2===0 ? '#f8f8f8' : '#ffffff'}}>
-                    <td style={{padding:'5px 7px',color:'#888'}}>{i+1}</td>
-                    <td style={{padding:'5px 7px'}}>{p.titre}</td>
-                    <td style={{padding:'5px 7px',fontWeight:'600'}}>{p.nom}</td>
-                    <td style={{padding:'5px 7px'}}>{p.nationalite||'—'}</td>
-                    <td style={{padding:'5px 7px',fontFamily:'monospace',fontSize:'9px'}}>
-                      {p.num_document||'—'}
+                  <tr key={p.id || i}
+                    style={{background: i % 2 === 0 ? '#fff' : '#f5f5f5',
+                      borderBottom:'1px solid #e8e8e8'}}>
+                    <td style={{padding:'6px 8px',color:'#888',fontWeight:'700'}}>
+                      {i + 1}
                     </td>
-                    <td style={{padding:'5px 7px'}}>{p.telephone||'—'}</td>
-                    <td style={{padding:'5px 7px',fontSize:'9px'}}>{p.email||'—'}</td>
+                    <td style={{padding:'6px 8px'}}>{p.titre}</td>
+                    <td style={{padding:'6px 8px',fontWeight:'600'}}>{p.nom}</td>
+                    <td style={{padding:'6px 8px'}}>{p.nationalite || '—'}</td>
+                    <td style={{padding:'6px 8px',fontFamily:'monospace',fontSize:'9px'}}>
+                      {p.num_document || '—'}
+                    </td>
+                    <td style={{padding:'6px 8px'}}>{p.telephone || '—'}</td>
+                    <td style={{padding:'6px 8px',fontSize:'9px'}}>{p.email || '—'}</td>
                   </tr>
                 ))}
               </tbody>
               <tfoot>
                 <tr>
-                  <td colSpan={7} style={{padding:'5px 7px',background:'#F5A623',
+                  <td colSpan={7} style={{padding:'6px 8px',background:'#F5A623',
                     color:'#1a1a1a',fontWeight:'700',fontSize:'10px'}}>
-                    Total : {client.nb_pax||1} PAX
-                    (1 leader + {pax.length} participant{pax.length>1?'s':''})
+                    Total : {client.nb_pax || 1} PAX
+                    (1 leader + {pax.length} participant{pax.length > 1 ? 's' : ''})
                   </td>
                 </tr>
               </tfoot>
             </table>
 
             {/* ── Signatures ── */}
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'24px',
-              marginTop:'22px',paddingTop:'14px',borderTop:'2px solid #F5A623'}}>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',
+              gap:'30px',marginTop:'24px',paddingTop:'14px',
+              borderTop:'2px solid #1a1a1a'}}>
               {['Responsable Sales','Responsable Booking','Client Leader'].map(sig => (
                 <div key={sig} style={{textAlign:'center'}}>
-                  <div style={{borderBottom:'1px solid #1a1a1a',
-                    height:'38px',marginBottom:'7px'}}/>
-                  <div style={{fontSize:'8px',color:'#666',
-                    textTransform:'uppercase',letterSpacing:'.5px'}}>{sig}</div>
+                  <div style={{borderBottom:'1.5px solid #1a1a1a',
+                    height:'40px',marginBottom:'6px'}}/>
+                  <div style={{fontSize:'8px',color:'#555',textTransform:'uppercase',
+                    letterSpacing:'.5px',fontWeight:'700'}}>{sig}</div>
                 </div>
               ))}
             </div>
 
             {/* ── Footer ── */}
-            <div style={{textAlign:'center',fontSize:'8px',color:'#bbb',
-              marginTop:'18px',paddingTop:'9px',borderTop:'1px solid #eee',lineHeight:'1.6'}}>
+            <div style={{textAlign:'center',fontSize:'8px',color:'#888',
+              marginTop:'20px',paddingTop:'8px',borderTop:'1px solid #ddd',
+              lineHeight:'1.6'}}>
+              <div style={{width:'30px',height:'2px',background:'#F5A623',
+                margin:'0 auto 8px'}}/>
               SITRAC — Ramartour Madagascar &nbsp;|&nbsp;
-              Document généré le {today} &nbsp;|&nbsp; Réf. {refDoc}<br/>
-              Ce document est confidentiel et destiné exclusivement
-              à l'usage interne de Ramartour Madagascar.
+              Réf. {refDoc} &nbsp;|&nbsp; {today}<br/>
+              Document confidentiel — Usage interne uniquement
             </div>
 
           </div>
@@ -407,7 +447,6 @@ function GIPrintModal({ client, open, onClose }) {
     </Modal>
   )
 }
-
 // ─── Page principale ──────────────────────────────────────────
 export default function InformationsGenerales() {
   const { data: clients = [], isLoading, error, refetch } = useClients()

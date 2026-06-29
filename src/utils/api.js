@@ -208,6 +208,7 @@ export const financeAPI = {
   getResumePaiements:  (pcId)   => api.get(`/finance/paiements/resume/${pcId}/`),
   getClotures:         (p = '') => api.get(`/finance/clotures/${p}`),
   createCloture:       (data)   => api.post('/finance/clotures/', data),
+  updateCloture:     (id, data) => api.put(`/finance/clotures/${id}/`, data),
   getRecus:            (p = '') => api.get(`/finance/recus/${p}`),
   createRecu:          (data)   => api.post('/finance/recus/', data),
 }

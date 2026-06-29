@@ -31,6 +31,7 @@ import Recu                  from './pages/Finance/Recu'
 import DossierVenteFinance   from './pages/Finance/DossierVente'
 import DossierBookingFinance from './pages/Finance/DossierBooking'
 
+
 // Administration
 import AdminDashboard        from './pages/Admin/AdminDashboard'
 import Utilisateurs          from './pages/Admin/Utilisateurs'
@@ -115,7 +116,7 @@ export default function App() {
       element={<RequireAuth depts={FINANCE}><DossierVenteFinance /></RequireAuth>} />
       <Route path="/finance/dossier-booking"
       element={<RequireAuth depts={FINANCE}><DossierBookingFinance /></RequireAuth>} /> 
-
+    
       {/* Administration */}
       <Route path="/admin"               element={<RequireAuth depts={ADMIN}><AdminDashboard /></RequireAuth>} />
       <Route path="/admin/utilisateurs"  element={<RequireAuth depts={ADMIN}><Utilisateurs /></RequireAuth>} />
