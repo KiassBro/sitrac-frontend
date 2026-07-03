@@ -224,3 +224,8 @@ export const superviseurAPI = {
   updateConstante:(id, data)    => api.patch(`/superviseur/constantes/${id}/`, data),
   getConstanteByKey: (cle)      => api.get(`/superviseur/constantes/par-cle/?cle=${cle}`),
 }
+
+
+export const chatbotAPI = {
+  send: (messages) => api.post('/chatbot/', { messages }),
+}

@@ -2,11 +2,13 @@ import { useEffect } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from './store/authStore'
 
+
 // Communes
 import Login           from './pages/Login'
 import Dashboard       from './pages/Dashboard'
 import Notifications   from './pages/Notifications'
 import Profile         from './pages/Profile'
+import Chatbot         from './pages/Chatbot'
 
 // Sales
 import Destinations          from './pages/Sales/Destinations'
@@ -86,6 +88,7 @@ export default function App() {
       <Route path="/dashboard"     element={<RequireAuth><Dashboard /></RequireAuth>} />
       <Route path="/notifications" element={<RequireAuth><Notifications /></RequireAuth>} />
       <Route path="/profile"       element={<RequireAuth><Profile /></RequireAuth>} />
+      <Route path="/chatbot"       element={<RequireAuth><Chatbot /></RequireAuth>} />
 
       {/* Sales */}
       <Route path="/sales/destinations"     element={<RequireAuth depts={SALES}><Destinations /></RequireAuth>} />
