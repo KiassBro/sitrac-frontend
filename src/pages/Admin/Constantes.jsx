@@ -1,14 +1,15 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { Settings, Plus, Pencil, Save } from 'lucide-react'
+import { Settings, Plus, Pencil, Save, TrendingUp } from 'lucide-react'
 import { useConstantes } from '../../hooks/useApi'
 import { superviseurAPI } from '../../utils/api'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useConfirm } from '../../hooks/useConfirm'
 import toast from 'react-hot-toast'
 import Layout from '../../components/Layout/Layout'
 import { Modal, StatCard } from '../../components/UI/index.jsx'
 import { ApiState } from '../../components/UI/ApiLoader.jsx'
+import { fmtDate } from '../../utils/storage'
 
 const CATEGORIES = {
   'taux_change':    '💱 Financier',
@@ -50,6 +51,21 @@ export default function Constantes() {
     acc[cat].push(c)
     return acc
   }, {})
+
+  // ── Nouvelle fonctionnalité RG 35 : historique des taux de change ──
+  const { data: tauxList = [], isLoading: tauxLoading, refetch: refetchTaux } = useQuery({
+    queryKey: ['taux-change-historique'],
+    queryFn:  () => superviseurAPI.getTauxChangeHistorique().then(r => r.results || r),
+  })
+  const [tauxModal, setTauxModal] = useState(false)
+  const tauxForm = useForm()
+  const tauxMut = useMutation({
+    mutationFn: (data) => superviseurAPI.createTauxChange(data),
+    onSuccess: () => { qc.invalidateQueries(['taux-change-historique']); toast.success('Taux de change enregistré'); setTauxModal(false) },
+    onError: e => toast.error(e.message),
+  })
+  const openAddTaux = () => { tauxForm.reset({ taux:'', date_effet:'', observation:'' }); setTauxModal(true) }
+  const onSubmitTaux = (data) => confirmSave(() => tauxMut.mutate({ ...data, taux: +data.taux }))
 
   return (
     <Layout breadcrumb={['SITRAC','Administration','Constantes Système']}>
@@ -100,6 +116,36 @@ export default function Constantes() {
         )}
       </ApiState>
 
+      {/* RG 35 — Historique des taux de change */}
+      <div className="card mb-5">
+        <div className="card-header">
+          <h3 className="font-title font-bold text-sm text-gray-800 dark:text-gray-200 flex items-center gap-2">
+            <TrendingUp size={14} className="text-orange"/> Historique des taux de change
+          </h3>
+          <button className="btn btn-primary btn-sm" onClick={openAddTaux}><Plus size={13}/> Nouveau taux</button>
+        </div>
+        <ApiState isLoading={tauxLoading} onRetry={refetchTaux} loadingText="Chargement...">
+          <div className="overflow-x-auto">
+            <table className="tbl text-sm">
+              <thead><tr><th>Date d'effet</th><th>Taux (Ar/€)</th><th>Observation</th><th>Défini par</th></tr></thead>
+              <tbody>
+                {tauxList.length === 0
+                  ? <tr><td colSpan={4} className="py-8 text-center text-gray-400">Aucun taux de change enregistré</td></tr>
+                  : tauxList.map(t => (
+                    <tr key={t.id}>
+                      <td>{fmtDate(t.date_effet)}</td>
+                      <td><strong className="text-brand-green">{(+t.taux).toLocaleString('fr-FR')} Ar</strong></td>
+                      <td className="text-gray-500">{t.observation || '—'}</td>
+                      <td className="text-xs text-gray-400">{t.defini_par_nom || '—'}</td>
+                    </tr>
+                  ))
+                }
+              </tbody>
+            </table>
+          </div>
+        </ApiState>
+      </div>
+
       <div className="flex justify-end">
         <button className="btn btn-primary" onClick={openAdd}><Plus size={14}/> Ajouter une constante</button>
       </div>
@@ -135,6 +181,32 @@ export default function Constantes() {
             ℹ️ La clé ne peut pas être modifiée. Pour changer la clé, supprimez et recréez la constante.
           </div>
         )}
+      </Modal>
+
+      {/* RG 35 — Modal ajout taux de change */}
+      <Modal open={tauxModal} onClose={() => setTauxModal(false)}
+        title="Nouveau taux de change" icon={TrendingUp}
+        footer={<>
+          <button className="btn btn-ghost" onClick={() => setTauxModal(false)}>Annuler</button>
+          <button className="btn btn-success" onClick={tauxForm.handleSubmit(onSubmitTaux)} disabled={tauxMut.isPending}>
+            <Save size={14}/> {tauxMut.isPending ? 'Enregistrement...' : 'Enregistrer'}
+          </button>
+        </>}
+      >
+        <div className="form-group">
+          <label className="form-label">Taux (Ar pour 1 €) <span className="form-req">*</span></label>
+          <input type="number" step="0.01" className="form-control" placeholder="ex: 4900"
+            {...tauxForm.register('taux', { required: true, min: 0 })}/>
+        </div>
+        <div className="form-group">
+          <label className="form-label">Date d'effet <span className="form-req">*</span></label>
+          <input type="date" className="form-control" {...tauxForm.register('date_effet', { required: true })}/>
+        </div>
+        <div className="form-group">
+          <label className="form-label">Observation</label>
+          <input className="form-control" placeholder="ex: Ajustement suite dévaluation"
+            {...tauxForm.register('observation')}/>
+        </div>
       </Modal>
     </Layout>
   )

@@ -8,11 +8,22 @@ export default function Layout({ children, breadcrumb }) {
   const w = sidebarCollapsed ? 68 : 260
 
   return (
-    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors">
+    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950">
       <Sidebar />
-      <div className="flex flex-col flex-1 min-h-screen transition-all duration-300" style={{ marginLeft: w }}>
-        <Topbar breadcrumb={breadcrumb} />
-        <main className="flex-1 p-6 animate-fade-in">
+      <div
+        className="flex flex-col flex-1 min-h-screen"
+        style={{
+          marginLeft: w,
+          transition: 'margin-left 300ms ease',
+        }}
+      >
+        <Topbar breadcrumb={breadcrumb} sidebarWidth={w}/>
+
+        {/* ✅ paddingTop: 64px = hauteur h-16 de la Topbar fixed */}
+        <main
+          className="flex-1 p-6"
+          style={{ paddingTop: 'calc(64px + 1.5rem)' }}
+        >
           {children}
         </main>
       </div>

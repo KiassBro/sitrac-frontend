@@ -216,7 +216,7 @@ export default function Chatbot() {
     }
   }
 
-  const sendMessage = async (text = input.trim()) => {
+    const sendMessage = async (text = input.trim()) => {
     if (!text || loading) return
     setInput('')
     if (textareaRef.current) textareaRef.current.style.height = '46px'
@@ -248,7 +248,10 @@ export default function Chatbot() {
       if (fpData)                    setTimeout(()=>setPrintFP(fpData), 400)
 
     } catch(e) {
-      const errMsg = e.response?.data?.error || e.message || 'Erreur'
+      // apiFetch (utils/api.js) lance un Error simple avec .message / .data,
+      // pas un objet de type axios avec .response.data — cette lecture ne
+      // fonctionnait que par un repli accidentel sur e.message.
+      const errMsg = e.data?.error || e.message || 'Erreur'
       setMessages(prev => [...prev, {
         role:'assistant',
         content:`❌ **Erreur** : ${errMsg}`,

@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useForm } from 'react-hook-form'
-import { ClipboardList, Plus, Pencil, Trash2, ArrowLeft, Save, AlertCircle } from 'lucide-react'
+import { ClipboardList, Plus, Pencil, Trash2, ArrowLeft, Save, AlertCircle, Download, Upload } from 'lucide-react'
 import { useProgrammeClients } from '../../hooks/useApi'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { bookingAPI } from '../../utils/api'
@@ -22,6 +22,8 @@ function BrieffingForm({ pc, onBack }) {
   const [editIdx, setEditIdx] = useState(null)
   const [lignes,  setLignes]  = useState([])
   const [inited,  setInited]  = useState(false)
+  const [csvBusy, setCsvBusy] = useState(false)
+  const fileInputRef = useRef(null)
 
   const { register: regForm, handleSubmit: subForm, reset: resetForm,
           register: regLg, handleSubmit: subLg, reset: resetLg } = useForm()
@@ -70,6 +72,40 @@ function BrieffingForm({ pc, onBack }) {
 
   const ok    = lignes.filter(l=>l.etat!=='NOK').length
   const total = lignes.reduce((s,l)=>s+(+l.tarif_paiement||0),0)
+
+  // ── RG 31/32 : Export/Import CSV des lignes de brieffing ────────
+  // Nécessite que le brieffing existe déjà côté serveur (brf non null) :
+  // les endpoints agissent sur les lignes réellement enregistrées.
+  const exportCsv = async () => {
+    if (!brf) return
+    setCsvBusy(true)
+    try {
+      await bookingAPI.exportBrieffingCsv(brf.id)
+    } catch (e) {
+      toast.error(`Échec de l'export CSV : ${e.message}`)
+    } finally {
+      setCsvBusy(false)
+    }
+  }
+
+  const triggerImport = () => fileInputRef.current?.click()
+
+  const handleImportFile = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file || !brf) return
+    setCsvBusy(true)
+    try {
+      const result = await bookingAPI.importBrieffingCsv(brf.id, file)
+      setLignes(result.brieffing.lignes || [])
+      qc.invalidateQueries(['brieffing', pc.id])
+      toast.success(result.detail)
+    } catch (e) {
+      toast.error(`Échec de l'import CSV : ${e.message}`)
+    } finally {
+      setCsvBusy(false)
+    }
+  }
 
   return (
     <div>
@@ -121,6 +157,15 @@ function BrieffingForm({ pc, onBack }) {
               <div className="flex items-center gap-3">
                 <span className="text-xs text-gray-400">{ok}/{lignes.length} confirmés</span>
                 <button className="btn btn-primary btn-sm" onClick={openAddLg}><Plus size={13}/> Ajouter</button>
+                <button className="btn btn-ghost btn-sm" disabled={!brf || csvBusy} onClick={exportCsv}
+                  title={!brf ? "Enregistrez d'abord le brieffing pour pouvoir exporter" : ''}>
+                  <Download size={13}/> Exporter
+                </button>
+                <button className="btn btn-ghost btn-sm" disabled={!brf || csvBusy} onClick={triggerImport}
+                  title={!brf ? "Enregistrez d'abord le brieffing pour pouvoir importer" : ''}>
+                  <Upload size={13}/> Importer
+                </button>
+                <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleImportFile}/>
               </div>
             </div>
             <div className="overflow-x-auto">

@@ -114,6 +114,52 @@ export const api = {
   delete: (url, opts = {}) => apiFetch(url, { method: 'DELETE', ...opts }),
 }
 
+// ─── Téléchargement de fichier authentifié ──────────────────────
+// BUG CORRIGÉ : l'export CSV du Superviseur utilisait auparavant
+// `window.open(url)`, une navigation de navigateur classique qui n'envoie
+// PAS l'en-tête Authorization Bearer. Contre un endpoint protégé par JWT,
+// cela renvoyait un 401 au lieu du fichier. downloadFile fait un vrai
+// fetch authentifié puis déclenche le téléchargement via un blob.
+export async function downloadFile(endpoint, filename) {
+  const token = TokenManager.getAccess()
+  const res = await fetch(`${BASE_URL}${endpoint}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  })
+  if (!res.ok) {
+    let msg = `Erreur HTTP ${res.status}`
+    try { msg = (await res.json()).detail || msg } catch { /* réponse non-JSON */ }
+    throw new Error(msg)
+  }
+  const blob = await res.blob()
+  const url  = window.URL.createObjectURL(blob)
+  const a    = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  window.URL.revokeObjectURL(url)
+}
+
+// ─── Upload de fichier (multipart) authentifié ──────────────────
+export async function uploadFile(endpoint, file) {
+  const token = TokenManager.getAccess()
+  const formData = new FormData()
+  formData.append('file', file)
+  const res = await fetch(`${BASE_URL}${endpoint}`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    // Ne PAS fixer Content-Type ici : le navigateur doit générer lui-même
+    // le boundary multipart/form-data.
+    body: formData,
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(data.detail || `Erreur HTTP ${res.status}`)
+  }
+  return data
+}
+
 // ─── API par domaine ───────────────────────────────────────────
 export const authAPI = {
   login:          (login, password)  => api.post('/auth/login/', { login, password }),
@@ -165,12 +211,23 @@ export const salesAPI = {
   saveCotation:    (pcId, data, exists) =>
     exists ? api.put(`/sales/programme-clients/${pcId}/cotation/`, data)
            : api.post(`/sales/programme-clients/${pcId}/cotation/`, data),
+  // RG 31/32 : Export/Import CSV des lignes de cotation
+  exportCotationCsv: (pcId) => downloadFile(`/sales/programme-clients/${pcId}/cotation/export-csv/`, `cotation_pc${pcId}.csv`),
+  importCotationCsv: (pcId, file) => uploadFile(`/sales/programme-clients/${pcId}/cotation/import-csv/`, file),
+  // RG 15 : verrouillage après validation
+  validerCotation:   (pcId) => api.post(`/sales/programme-clients/${pcId}/cotation/valider/`),
+  devaliderCotation: (pcId) => api.post(`/sales/programme-clients/${pcId}/cotation/devalider/`),
+  // Nouvelle fonctionnalité : historique des versions de cotation
+  getCotationHistorique: (pcId) => api.get(`/sales/programme-clients/${pcId}/cotation/historique/`),
 
   // Facture Pro
   getFacturePro:   (pcId)        => api.get(`/sales/programme-clients/${pcId}/facture-pro/`),
   saveFacturePro:  (pcId, data, exists) =>
     exists ? api.put(`/sales/programme-clients/${pcId}/facture-pro/`, data)
            : api.post(`/sales/programme-clients/${pcId}/facture-pro/`, data),
+  // RG 15 : verrouillage après validation
+  validerFacturePro:   (pcId) => api.post(`/sales/programme-clients/${pcId}/facture-pro/valider/`),
+  devaliderFacturePro: (pcId) => api.post(`/sales/programme-clients/${pcId}/facture-pro/devalider/`),
 
   // ── Cotation Libre ──────────────────────────────────────────
   getCotationsLibres: (params = '') => api.get(`/sales/cotations-libres/${params}`),
@@ -191,9 +248,16 @@ export const bookingAPI = {
   createBrieffing:  (data)        => api.post('/booking/brieffings/', data),
   updateBrieffing:  (id, data)    => api.put(`/booking/brieffings/${id}/`, data),
   deleteBrieffing:  (id)          => api.delete(`/booking/brieffings/${id}/`),
+  // RG 31/32 : Export/Import CSV des lignes de brieffing
+  exportBrieffingCsv: (id) => downloadFile(`/booking/brieffings/${id}/export-csv/`, `brieffing_${id}.csv`),
+  importBrieffingCsv: (id, file) => uploadFile(`/booking/brieffings/${id}/import-csv/`, file),
+
   getProvisions:    (params = '') => api.get(`/booking/provisions/${params}`),
   createProvision:  (data)        => api.post('/booking/provisions/', data),
   updateProvision:  (id, data)    => api.put(`/booking/provisions/${id}/`, data),
+  // RG 31/32 : Export/Import CSV des lignes de provision
+  exportProvisionCsv: (id) => downloadFile(`/booking/provisions/${id}/export-csv/`, `provision_${id}.csv`),
+  importProvisionCsv: (id, file) => uploadFile(`/booking/provisions/${id}/import-csv/`, file),
 }
 
 export const financeAPI = {
@@ -202,6 +266,7 @@ export const financeAPI = {
   getFacturesDef:      (p = '') => api.get(`/finance/factures-definitives/${p}`),
   createFactureDef:    (data)   => api.post('/finance/factures-definitives/', data),
   updateFactureDef:    (id, d)  => api.put(`/finance/factures-definitives/${id}/`, d),
+  envoyerFactureDefEmail: (id, email) => api.post(`/finance/factures-definitives/${id}/envoyer-email/`, email ? { email } : {}),
   getPaiements:        (p = '') => api.get(`/finance/paiements/${p}`),
   createPaiement:      (data)   => api.post('/finance/paiements/', data),
   deletePaiement:      (id)     => api.delete(`/finance/paiements/${id}/`),
@@ -216,13 +281,29 @@ export const financeAPI = {
 export const superviseurAPI = {
   getLogs:        (params = '') => api.get(`/superviseur/audit-logs/${params}`),
   getStats:       ()            => api.get('/superviseur/audit-logs/stats/'),
-  exportCsv:      ()            => `${BASE_URL}/superviseur/audit-logs/export-csv/`,
+  // BUG CORRIGÉ : renvoyait auparavant une URL brute destinée à window.open(),
+  // ce qui n'envoyait pas le token JWT et échouait avec 401. downloadFile()
+  // fait un fetch authentifié puis déclenche le téléchargement.
+  exportCsv:      (params = '')  => downloadFile(`/superviseur/audit-logs/export-csv/${params}`, 'sitrac_audit.csv'),
   getTables:      ()            => api.get('/superviseur/audit-logs/tables/'),
   getUsers:       ()            => api.get('/superviseur/audit-logs/utilisateurs/'),
   getConstantes:  ()            => api.get('/superviseur/constantes/'),
   createConstante:(data)        => api.post('/superviseur/constantes/', data),
   updateConstante:(id, data)    => api.patch(`/superviseur/constantes/${id}/`, data),
   getConstanteByKey: (cle)      => api.get(`/superviseur/constantes/par-cle/?cle=${cle}`),
+
+  // Notifications persistantes (RG 28, 39, 40)
+  getNotifications:  ()         => api.get('/superviseur/notifications/'),
+  markNotifRead:     (id)       => api.post('/superviseur/notifications/mark-read/', { id }),
+  markAllNotifsRead: ()         => api.post('/superviseur/notifications/mark-all-read/'),
+
+  // Historique des taux de change (RG 35)
+  getTauxChangeHistorique: (params = '') => api.get(`/superviseur/taux-change/${params}`),
+  getTauxChangeCourant:    ()            => api.get('/superviseur/taux-change/courant/'),
+  createTauxChange:        (data)        => api.post('/superviseur/taux-change/', data),
+
+  // Tableau de bord KPI
+  getKpiDashboard: (annee = '') => api.get(`/superviseur/kpi/${annee ? `?annee=${annee}` : ''}`),
 }
 
 

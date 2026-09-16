@@ -1,15 +1,16 @@
 import { useState, useRef } from 'react'
 import { useForm } from 'react-hook-form'
-import { FileCheck, Plus, Pencil, Trash2, ArrowLeft, Save, AlertCircle, Printer } from 'lucide-react'
+import { FileCheck, Plus, Pencil, Trash2, ArrowLeft, Save, AlertCircle, Printer, Lock, Unlock, HistoryIcon } from 'lucide-react'
 import { useProgrammeClients } from '../../hooks/useApi'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { salesAPI } from '../../utils/api'
 import { useConfirm } from '../../hooks/useConfirm'
+import { useAuthStore } from '../../store/authStore'
 import toast from 'react-hot-toast'
 import Layout from '../../components/Layout/Layout'
 import { Modal, Badge, SearchInput, StatCard } from '../../components/UI/index.jsx'
 import { ApiState } from '../../components/UI/ApiLoader.jsx'
-import { fmtDate, fmt, today } from '../../utils/storage'
+import { fmtDate, fmtDateTime, fmt, today } from '../../utils/storage'
 
 // ─── Modal impression Facture Pro ─────────────────────────────
 function FactureProPrintModal({ pc, fp, open, onClose }) {
@@ -295,7 +296,8 @@ function FactureProPrintModal({ pc, fp, open, onClose }) {
 // ─── Formulaire Facture Pro ────────────────────────────────────
 function FactureProForm({ pc, onBack }) {
   const qc = useQueryClient()
-  const { confirmDelete, confirmSave } = useConfirm()
+  const { confirmDelete, confirmSave, confirm } = useConfirm()
+  const { user } = useAuthStore()
   const [lgModal,   setLgModal]   = useState(false)
   const [editIdx,   setEditIdx]   = useState(null)
   const [lignes,    setLignes]    = useState([])
@@ -304,14 +306,24 @@ function FactureProForm({ pc, onBack }) {
   const [inited,    setInited]    = useState(false)
   const [printOpen, setPrintOpen] = useState(false)
   const [printFP,   setPrintFP]   = useState(null)
+  const [lockBusy,  setLockBusy]  = useState(false)
+  const [histOpen,  setHistOpen]  = useState(false)
 
   const { register, handleSubmit, reset } = useForm()
 
-  const { data: fp, isLoading } = useQuery({
+  const { data: fp, isLoading, refetch } = useQuery({
     queryKey: ['facture-pro', pc.id],
     queryFn:  () => salesAPI.getFacturePro(pc.id),
     retry: false,
     onError: () => {},
+  })
+
+  const isLocked = !!fp?.valide
+
+  const { data: historique = [], isLoading: histLoading } = useQuery({
+    queryKey: ['facture-pro-historique', pc.id],
+    queryFn:  () => salesAPI.getFactureProHistorique(pc.id),
+    enabled:  histOpen && !!fp,
   })
 
   if (fp && !inited) {
@@ -368,6 +380,31 @@ function FactureProForm({ pc, onBack }) {
     setPrintOpen(true)
   }
 
+  // ── RG 15 : verrouillage après validation ────────────────────
+  const validerFP = () => confirm({
+    icon:'🔒', type:'warning', title:'Valider la facture pro',
+    msg:"Une fois validée, cette facture pro ne pourra plus être modifiée (RG 15). Continuer ?",
+    confirmText:'Oui, valider',
+    onConfirm: async () => {
+      setLockBusy(true)
+      try { await salesAPI.validerFacturePro(pc.id); await refetch() }
+      catch (e) { toast.error(`Échec de la validation : ${e.message}`) }
+      finally { setLockBusy(false) }
+    },
+  })
+
+  const devaliderFP = () => confirm({
+    icon:'🔓', type:'warning', title:'Dévalider la facture pro',
+    msg:"Cette facture pro redeviendra modifiable. Réservé à l'Administration.",
+    confirmText:'Oui, dévalider',
+    onConfirm: async () => {
+      setLockBusy(true)
+      try { await salesAPI.devaliderFacturePro(pc.id); await refetch() }
+      catch (e) { toast.error(`Échec : ${e.message}`) }
+      finally { setLockBusy(false) }
+    },
+  })
+
   return (
     <div>
       <div className="flex items-center gap-3 mb-5">
@@ -380,6 +417,34 @@ function FactureProForm({ pc, onBack }) {
         </h1>
       </div>
 
+      {/* RG 15 : bannière de statut de validation */}
+      {isLocked ? (
+        <div className="card mb-4 p-4 flex items-center justify-between gap-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+          <div className="flex items-center gap-3">
+            <Lock size={18} className="text-brand-green flex-shrink-0"/>
+            <div className="text-sm text-brand-green">
+              <strong>Facture pro validée</strong> le {fmtDateTime(fp.valide_le)} par {fp.valide_par_nom || '—'}.
+              Elle ne peut plus être modifiée (RG 15).
+            </div>
+          </div>
+          {user?.dept === 'Administration' && (
+            <button className="btn btn-ghost btn-sm flex-shrink-0" disabled={lockBusy} onClick={devaliderFP}>
+              <Unlock size={13}/> Dévalider
+            </button>
+          )}
+        </div>
+      ) : fp && (
+        <div className="card mb-4 p-4 flex items-center justify-between gap-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800">
+          <div className="flex items-center gap-3 text-sm text-orange-700 dark:text-orange-400">
+            <Lock size={18} className="flex-shrink-0"/>
+            Cette facture pro est encore modifiable. Validez-la une fois définitive pour la verrouiller (RG 15).
+          </div>
+          <button className="btn btn-primary btn-sm flex-shrink-0" disabled={lockBusy} onClick={validerFP}>
+            <Lock size={13}/> Valider
+          </button>
+        </div>
+      )}
+
       {/* Info dossier */}
       <div className="card mb-4">
         <div className="card-header">
@@ -390,7 +455,7 @@ function FactureProForm({ pc, onBack }) {
             <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">
               Date facture
             </label>
-            <input type="date" className="form-control w-44 py-1.5 text-sm"
+            <input type="date" className="form-control w-44 py-1.5 text-sm" disabled={isLocked}
               value={dateFac} onChange={e => setDateFac(e.target.value)}/>
           </div>
         </div>
@@ -419,9 +484,15 @@ function FactureProForm({ pc, onBack }) {
           <h3 className="font-title font-bold text-sm text-gray-800 dark:text-gray-200">
             Lignes de Facture Pro
           </h3>
-          <button className="btn btn-primary btn-sm" onClick={openAdd}>
-            <Plus size={13}/> Ajouter une ligne
-          </button>
+          <div className="flex gap-2">
+            <button className="btn btn-primary btn-sm" disabled={isLocked} onClick={openAdd}>
+              <Plus size={13}/> Ajouter une ligne
+            </button>
+            <button className="btn btn-ghost btn-sm" disabled={!fp} onClick={()=>setHistOpen(true)}
+              title={!fp ? "Enregistrez d'abord la facture pro" : ''}>
+              <HistoryIcon size={13}/> Historique
+            </button>
+          </div>
         </div>
         {isLoading ? (
           <div className="p-8 text-center text-gray-400">Chargement...</div>
@@ -456,11 +527,11 @@ function FactureProForm({ pc, onBack }) {
                       </strong>
                     </td>
                     <td className="text-center">
-                      <button className="btn btn-ghost btn-xs mr-1"
+                      <button className="btn btn-ghost btn-xs mr-1" disabled={isLocked}
                         onClick={() => openEdit(i)}>
                         <Pencil size={11}/>
                       </button>
-                      <button className="btn btn-danger btn-xs"
+                      <button className="btn btn-danger btn-xs" disabled={isLocked}
                         onClick={() => confirmDelete(`ligne ${i+1}`,
                           () => setLignes(p => p.filter((_,j) => j!==i)))}>
                         <Trash2 size={11}/>
@@ -483,7 +554,7 @@ function FactureProForm({ pc, onBack }) {
             <div className="flex justify-between items-center">
               <span className="text-gray-500">Remise (€)</span>
               <input type="number" step="0.01"
-                className="form-control w-28 py-1 text-sm text-right"
+                className="form-control w-28 py-1 text-sm text-right" disabled={isLocked}
                 value={remise} onChange={e => setRemise(e.target.value)}/>
             </div>
             <div className="flex justify-between pt-2 border-t border-gray-200
@@ -504,7 +575,8 @@ function FactureProForm({ pc, onBack }) {
           </button>
         )}
         <button className="btn btn-success btn-lg" onClick={save}
-          disabled={saveMut.isPending}>
+          disabled={saveMut.isPending || isLocked}
+          title={isLocked ? 'Facture pro validée — verrouillée (RG 15)' : ''}>
           <Save size={15}/>
           {saveMut.isPending ? 'Enregistrement...' : 'Enregistrer'}
         </button>
@@ -517,6 +589,38 @@ function FactureProForm({ pc, onBack }) {
         open={printOpen}
         onClose={() => setPrintOpen(false)}
       />
+
+      {/* Nouvelle fonctionnalité : historique des versions de la facture pro */}
+      <Modal open={histOpen} onClose={()=>setHistOpen(false)} title="Historique des modifications" icon={HistoryIcon} size="lg"
+        footer={<button className="btn btn-ghost" onClick={()=>setHistOpen(false)}>Fermer</button>}
+      >
+        {histLoading ? (
+          <div className="py-8 text-center text-gray-400">Chargement...</div>
+        ) : historique.length === 0 ? (
+          <div className="py-8 text-center text-gray-400">
+            <HistoryIcon size={32} className="mx-auto mb-3 opacity-30"/>
+            Aucune modification enregistrée pour l'instant.
+          </div>
+        ) : (
+          <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+            {historique.map(v => (
+              <div key={v.id} className="border border-gray-200 dark:border-gray-700 rounded-xl p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-black px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
+                    Version {v.numero}
+                  </span>
+                  <span className="text-xs text-gray-400">{fmtDateTime(v.modifie_le)} — {v.modifie_par_nom || 'Utilisateur supprimé'}</span>
+                </div>
+                <div className="text-xs text-gray-500">
+                  État avant cette modification : <strong>{v.snapshot.lignes.length}</strong> ligne{v.snapshot.lignes.length>1?'s':''},
+                  {' '}remise <strong>{(+v.snapshot.remise).toLocaleString('fr-FR')} €</strong>,
+                  {' '}total TTC : <strong className="text-brand-green">{(+v.snapshot.total_ttc).toLocaleString('fr-FR')} €</strong>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Modal>
 
       {/* Modal ligne */}
       <Modal open={lgModal} onClose={() => setLgModal(false)}

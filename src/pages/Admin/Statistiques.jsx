@@ -1,6 +1,8 @@
 import { BarChart, Bar, Cell, LineChart, Line, PieChart, Pie, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts'
-import { BarChart2, TrendingUp, Users, Database } from 'lucide-react'
+import { BarChart2, TrendingUp, Users, Database, DollarSign, ArrowRightCircle } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 import { useAuditStats, useProgrammeClients, useClients, useDestinations, useProgrammes, useUtilisateurs } from '../../hooks/useApi'
+import { superviseurAPI } from '../../utils/api'
 import Layout from '../../components/Layout/Layout'
 import { StatCard } from '../../components/UI/index.jsx'
 import { ApiState } from '../../components/UI/ApiLoader.jsx'
@@ -38,6 +40,13 @@ export default function Statistiques() {
   const tauxCot    = pcs.length ? Math.round(pcs.filter(p=>p.a_cotation).length / pcs.length * 100) : 0
   const tauxFP     = pcs.length ? Math.round(pcs.filter(p=>p.a_facture_pro).length / pcs.length * 100) : 0
 
+  // Nouveau : tableau de bord KPI calculé côté serveur (CA réel facturé,
+  // marge nette d'après les clôtures, taux de conversion Sales→Finance)
+  const { data: kpi, isLoading: kpiLoading } = useQuery({
+    queryKey: ['kpi-dashboard'],
+    queryFn:  () => superviseurAPI.getKpiDashboard(),
+  })
+
   return (
     <Layout breadcrumb={['SITRAC','Administration','Statistiques']}>
       <div className="mb-5">
@@ -54,6 +63,48 @@ export default function Statistiques() {
       </div>
 
       <ApiState isLoading={isLoading} error={null} loadingText="Chargement des statistiques...">
+
+        {/* Nouveau : indicateurs financiers réels (CA facturé, marge, conversion) */}
+        <div className="card mb-5">
+          <div className="card-header">
+            <h3 className="font-title font-bold text-sm flex items-center gap-2">
+              <DollarSign size={14} className="text-brand-green"/> Indicateurs Financiers (données réelles)
+            </h3>
+          </div>
+          {kpiLoading ? (
+            <div className="p-8 text-center text-gray-400 text-sm">Chargement...</div>
+          ) : kpi && (
+            <div className="card-body">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
+                <StatCard icon={DollarSign} value={`${kpi.chiffre_affaires.toLocaleString('fr-FR')} €`} label="CA facturé (réel)" color="green"/>
+                <StatCard icon={TrendingUp} value={`${kpi.marge_totale.toLocaleString('fr-FR')} €`} label="Marge nette totale" color="blue"/>
+                <StatCard icon={TrendingUp} value={`${kpi.marge_moyenne_par_dossier.toFixed(0)} €`} label="Marge moy. / dossier" color="purple"/>
+                <StatCard icon={BarChart2} value={kpi.nb_dossiers} label="Dossiers analysés" color="orange"/>
+              </div>
+              <div className="flex items-center gap-1 flex-wrap text-xs font-bold">
+                {[
+                  ['Sales', kpi.conversion.sales_vers_cotation],
+                  ['Cotation', kpi.conversion.cotation_vers_facture_pro],
+                  ['Facture Pro', kpi.conversion.facture_pro_vers_brieffing],
+                  ['Brieffing', kpi.conversion.brieffing_vers_facture_def],
+                  ['Finance', null],
+                ].map(([label, pct], i, arr) => (
+                  <span key={label} className="flex items-center gap-1">
+                    <span className="px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">{label}</span>
+                    {i < arr.length - 1 && (
+                      <span className="flex items-center gap-1 text-gray-400">
+                        <ArrowRightCircle size={12}/> {pct}%
+                      </span>
+                    )}
+                  </span>
+                ))}
+                <span className="ml-2 px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                  Global Sales → Finance : {kpi.conversion.global_sales_vers_finance}%
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Ligne 1 : activité par département + camembert actions */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">

@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { useForm } from 'react-hook-form'
-import { FileCheck, Plus, Pencil, Trash2, ArrowLeft, Save, AlertCircle, Printer } from 'lucide-react'
+import { FileCheck, Plus, Pencil, Trash2, ArrowLeft, Save, AlertCircle, Printer, Mail } from 'lucide-react'
 import { useProgrammeClients } from '../../hooks/useApi'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { financeAPI } from '../../utils/api'
@@ -331,6 +331,21 @@ function FactureDefForm({ pc, onBack }) {
     onError: e => toast.error(e.message),
   })
 
+  // ── Nouvelle fonctionnalité : envoi automatique par email ────────
+  const [sendingEmail, setSendingEmail] = useState(false)
+  const sendEmail = async () => {
+    if (!fd) return
+    setSendingEmail(true)
+    try {
+      const result = await financeAPI.envoyerFactureDefEmail(fd.id)
+      toast.success(result.detail)
+    } catch (e) {
+      toast.error(e.message)
+    } finally {
+      setSendingEmail(false)
+    }
+  }
+
   const totalHT  = lignes.reduce((s,l) => s + (+l.nombre||1)*(+l.prix_unitaire||0), 0)
   const totalTTC = totalHT - (+remise||0)
 
@@ -500,6 +515,11 @@ function FactureDefForm({ pc, onBack }) {
         {lignes.length > 0 && (
           <button className="btn btn-ghost btn-lg" onClick={openPrint}>
             <Printer size={15}/> Aperçu PDF
+          </button>
+        )}
+        {fd && (
+          <button className="btn btn-ghost btn-lg" onClick={sendEmail} disabled={sendingEmail}>
+            <Mail size={15}/> {sendingEmail ? 'Envoi...' : 'Envoyer par email'}
           </button>
         )}
         <button className="btn btn-success btn-lg" onClick={save}

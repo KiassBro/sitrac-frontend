@@ -51,8 +51,11 @@ export default function Journal() {
   const total = logsData?.count   || 0
 
   const exportCsv = () => {
-    const url = superviseurAPI.exportCsv()
-    window.open(url, '_blank')
+    // exportCsv() effectue maintenant un fetch authentifié (JWT) et déclenche
+    // le téléchargement lui-même — voir utils/api.js:downloadFile().
+    superviseurAPI.exportCsv().catch(err => {
+      alert(`Échec de l'export CSV : ${err.message}`)
+    })
   }
 
   return (

@@ -120,10 +120,19 @@ export default function Sidebar() {
 
   return (
     <aside
+      // ✅ APRÈS — transition uniquement sur width :
       className={`fixed top-0 left-0 h-full flex flex-col bg-white dark:bg-gray-900
         border-r border-gray-200 dark:border-gray-700 shadow-sm z-[300]
-        transition-all duration-300 overflow-hidden
+        overflow-hidden
         ${sidebarCollapsed ? 'w-[68px]' : 'w-[260px]'}`}
+      style={{
+        // ✅ Transition uniquement sur width — pas de transition-all
+        transition: 'width 300ms ease',
+        // ✅ Force le GPU rendering pour Edge — évite le recalcul de position
+        willChange: 'width',
+        // ✅ Évite que Edge crée un stacking context parasite
+        transform: 'translateZ(0)',
+      }}
     >
       {/* Logo */}
       <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-200

@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useForm } from 'react-hook-form'
-import { Package, Plus, Pencil, Trash2, ArrowLeft, Save } from 'lucide-react'
+import { Package, Plus, Pencil, Trash2, ArrowLeft, Save, Download, Upload } from 'lucide-react'
 import { useProgrammeClients } from '../../hooks/useApi'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { bookingAPI } from '../../utils/api'
@@ -20,6 +20,8 @@ function ProvisionForm({ pc, onBack }) {
   const [obs,     setObs]     = useState('')
   const [dateProv,setDateProv] = useState(today())
   const [inited,  setInited]  = useState(false)
+  const [csvBusy, setCsvBusy] = useState(false)
+  const fileInputRef = useRef(null)
 
   const lgMethods = useForm()
 
@@ -62,6 +64,39 @@ function ProvisionForm({ pc, onBack }) {
     lignes: lignes.map((l,i) => ({ ...l, ordre:i })),
   }))
 
+  // ── RG 31/32 : Export/Import CSV des lignes de provision ────────
+  // Nécessite que la provision existe déjà côté serveur (prov non null).
+  const exportCsv = async () => {
+    if (!prov) return
+    setCsvBusy(true)
+    try {
+      await bookingAPI.exportProvisionCsv(prov.id)
+    } catch (e) {
+      toast.error(`Échec de l'export CSV : ${e.message}`)
+    } finally {
+      setCsvBusy(false)
+    }
+  }
+
+  const triggerImport = () => fileInputRef.current?.click()
+
+  const handleImportFile = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file || !prov) return
+    setCsvBusy(true)
+    try {
+      const result = await bookingAPI.importProvisionCsv(prov.id, file)
+      setLignes(result.provision.lignes || [])
+      qc.invalidateQueries(['provision', pc.id])
+      toast.success(result.detail)
+    } catch (e) {
+      toast.error(`Échec de l'import CSV : ${e.message}`)
+    } finally {
+      setCsvBusy(false)
+    }
+  }
+
   return (
     <div>
       <div className="flex items-center gap-3 mb-5">
@@ -92,7 +127,18 @@ function ProvisionForm({ pc, onBack }) {
       <div className="card mb-4">
         <div className="card-header">
           <h3 className="font-title font-bold text-sm text-gray-800 dark:text-gray-200">Lignes de Dépenses Prévisionnelles</h3>
-          <button className="btn btn-primary btn-sm" onClick={openAdd}><Plus size={13}/> Ajouter</button>
+          <div className="flex items-center gap-2">
+            <button className="btn btn-primary btn-sm" onClick={openAdd}><Plus size={13}/> Ajouter</button>
+            <button className="btn btn-ghost btn-sm" disabled={!prov || csvBusy} onClick={exportCsv}
+              title={!prov ? "Enregistrez d'abord la provision pour pouvoir exporter" : ''}>
+              <Download size={13}/> Exporter
+            </button>
+            <button className="btn btn-ghost btn-sm" disabled={!prov || csvBusy} onClick={triggerImport}
+              title={!prov ? "Enregistrez d'abord la provision pour pouvoir importer" : ''}>
+              <Upload size={13}/> Importer
+            </button>
+            <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleImportFile}/>
+          </div>
         </div>
         {isLoading ? <div className="p-8 text-center text-gray-400">Chargement...</div> : (
           <div className="overflow-x-auto">

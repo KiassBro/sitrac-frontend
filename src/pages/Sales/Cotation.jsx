@@ -1,12 +1,15 @@
 import { useState, useRef } from 'react'
 import { useForm } from 'react-hook-form'
-import { FileText, Plus, Pencil, Trash2, ArrowLeft, Save, Printer } from 'lucide-react'
+import { FileText, Plus, Pencil, Trash2, ArrowLeft, Save, Printer, Download, Upload, Lock, Unlock, HistoryIcon } from 'lucide-react'
 import { useProgrammeClients, useCotation, useCotationMutation } from '../../hooks/useApi'
+import { useQuery } from '@tanstack/react-query'
 import { useConfirm } from '../../hooks/useConfirm'
+import { useAuthStore } from '../../store/authStore'
 import Layout from '../../components/Layout/Layout'
 import { Modal, Badge, SearchInput } from '../../components/UI/index.jsx'
 import { ApiState } from '../../components/UI/ApiLoader.jsx'
-import { fmtDate, fmt, fmtAr } from '../../utils/storage'
+import { fmtDate, fmt, fmtAr, fmtDateTime } from '../../utils/storage'
+import { salesAPI } from '../../utils/api'
 
 // ─── Modal Aperçu PDF Cotation ─────────────────────────────────
 function CotationPrintModal({ pc, data, open, onClose }) {
@@ -356,7 +359,8 @@ function CotationPrintModal({ pc, data, open, onClose }) {
 function CotationForm({ pc, onBack }) {
   const { data: cot, isLoading, error, refetch } = useCotation(pc.id)
   const save = useCotationMutation(pc.id)
-  const { confirmDelete, confirmSave } = useConfirm()
+  const { confirmDelete, confirmSave, confirm } = useConfirm()
+  const { user } = useAuthStore()
 
   const [lignes,      setLignes]    = useState(() => cot?.lignes || [])
   const [fix,         setFix]       = useState(() => ({
@@ -368,6 +372,17 @@ function CotationForm({ pc, onBack }) {
   const [editLigne,    setEditLigne]  = useState(null)
   const [initialized,  setInit]       = useState(false)
   const [printOpen,    setPrintOpen]  = useState(false)
+  const [csvBusy,      setCsvBusy]    = useState(false)
+  const [lockBusy,     setLockBusy]   = useState(false)
+  const [histOpen,     setHistOpen]   = useState(false)
+  const fileInputRef = useRef(null)
+  const isLocked = !!cot?.valide
+
+  const { data: historique = [], isLoading: histLoading } = useQuery({
+    queryKey: ['cotation-historique', pc.id],
+    queryFn:  () => salesAPI.getCotationHistorique(pc.id),
+    enabled:  histOpen && !!cot,
+  })
 
   const { register, handleSubmit, reset } = useForm()
 
@@ -397,6 +412,41 @@ function CotationForm({ pc, onBack }) {
   }
   const deleteLigne = (i) => confirmDelete(`ligne ${i+1}`, () => setLignes(prev => prev.filter((_,j)=>j!==i)))
 
+  // ── RG 31/32 : Export/Import CSV des lignes de cotation ────────
+  // Nécessite que la cotation existe déjà côté serveur : les endpoints
+  // export/import agissent sur les lignes réellement enregistrées, pas
+  // sur les modifications locales non sauvegardées via "Tout enregistrer".
+  const exportCsv = async () => {
+    if (!cot) return
+    setCsvBusy(true)
+    try {
+      await salesAPI.exportCotationCsv(pc.id)
+    } catch (e) {
+      alert(`Échec de l'export CSV : ${e.message}`)
+    } finally {
+      setCsvBusy(false)
+    }
+  }
+
+  const triggerImport = () => fileInputRef.current?.click()
+
+  const handleImportFile = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = '' // permet de réimporter le même fichier plus tard
+    if (!file || !cot) return
+    setCsvBusy(true)
+    try {
+      const result = await salesAPI.importCotationCsv(pc.id, file)
+      setLignes(result.cotation.lignes || [])
+      await refetch()
+      alert(result.detail)
+    } catch (e) {
+      alert(`Échec de l'import CSV : ${e.message}`)
+    } finally {
+      setCsvBusy(false)
+    }
+  }
+
   const saveCot = () => {
     confirmSave(() => {
       const payload = {
@@ -409,6 +459,31 @@ function CotationForm({ pc, onBack }) {
     })
   }
 
+  // ── RG 15 : verrouillage après validation ────────────────────
+  const validerCotation = () => confirm({
+    icon:'🔒', type:'warning', title:'Valider la cotation',
+    msg:"Une fois validée, cette cotation ne pourra plus être modifiée (RG 15). Continuer ?",
+    confirmText:'Oui, valider',
+    onConfirm: async () => {
+      setLockBusy(true)
+      try { await salesAPI.validerCotation(pc.id); await refetch() }
+      catch (e) { alert(`Échec de la validation : ${e.message}`) }
+      finally { setLockBusy(false) }
+    },
+  })
+
+  const devaliderCotation = () => confirm({
+    icon:'🔓', type:'warning', title:'Dévalider la cotation',
+    msg:"Cette cotation redeviendra modifiable. Réservé à l'Administration.",
+    confirmText:'Oui, dévalider',
+    onConfirm: async () => {
+      setLockBusy(true)
+      try { await salesAPI.devaliderCotation(pc.id); await refetch() }
+      catch (e) { alert(`Échec : ${e.message}`) }
+      finally { setLockBusy(false) }
+    },
+  })
+
   const openPrint = () => setPrintOpen(true)
 
   if (isLoading) return <div className="text-center py-8 text-gray-400">Chargement de la cotation...</div>
@@ -420,13 +495,41 @@ function CotationForm({ pc, onBack }) {
         <h1 className="page-title text-xl"><FileText size={20} className="text-orange"/> Cotation — {pc.client_nom}</h1>
       </div>
 
+      {/* RG 15 : bannière de statut de validation */}
+      {isLocked ? (
+        <div className="card mb-4 p-4 flex items-center justify-between gap-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+          <div className="flex items-center gap-3">
+            <Lock size={18} className="text-brand-green flex-shrink-0"/>
+            <div className="text-sm text-brand-green">
+              <strong>Cotation validée</strong> le {fmtDateTime(cot.valide_le)} par {cot.valide_par_nom || '—'}.
+              Elle ne peut plus être modifiée (RG 15).
+            </div>
+          </div>
+          {user?.dept === 'Administration' && (
+            <button className="btn btn-ghost btn-sm flex-shrink-0" disabled={lockBusy} onClick={devaliderCotation}>
+              <Unlock size={13}/> Dévalider
+            </button>
+          )}
+        </div>
+      ) : cot && (
+        <div className="card mb-4 p-4 flex items-center justify-between gap-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800">
+          <div className="flex items-center gap-3 text-sm text-orange-700 dark:text-orange-400">
+            <Lock size={18} className="flex-shrink-0"/>
+            Cette cotation est encore modifiable. Validez-la une fois définitive pour la verrouiller (RG 15).
+          </div>
+          <button className="btn btn-primary btn-sm flex-shrink-0" disabled={lockBusy} onClick={validerCotation}>
+            <Lock size={13}/> Valider
+          </button>
+        </div>
+      )}
+
       {/* Info dossier */}
       <div className="card mb-4">
         <div className="card-header">
           <h3 className="font-title font-bold text-sm text-gray-800 dark:text-gray-200">Informations du dossier</h3>
           <div className="flex items-center gap-2">
             <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Taux Ar/€</label>
-            <input type="number" className="form-control w-28 py-1.5 text-sm" value={taux} onChange={e=>setTaux(e.target.value)}/>
+            <input type="number" className="form-control w-28 py-1.5 text-sm" value={taux} disabled={isLocked} onChange={e=>setTaux(e.target.value)}/>
           </div>
         </div>
         <div className="card-body">
@@ -443,7 +546,20 @@ function CotationForm({ pc, onBack }) {
         <div className="card-header">
           <h3 className="font-title font-bold text-sm text-gray-800 dark:text-gray-200">Lignes de Cotation</h3>
           <div className="flex gap-2">
-            <button className="btn btn-primary btn-sm" onClick={openAddLigne}><Plus size={13}/> Ajout Manuel</button>
+            <button className="btn btn-primary btn-sm" disabled={isLocked} onClick={openAddLigne}><Plus size={13}/> Ajout Manuel</button>
+            <button className="btn btn-ghost btn-sm" disabled={!cot || csvBusy} onClick={exportCsv}
+              title={!cot ? "Enregistrez d'abord la cotation pour pouvoir exporter" : ''}>
+              <Download size={13}/> Exporter
+            </button>
+            <button className="btn btn-ghost btn-sm" disabled={!cot || csvBusy || isLocked} onClick={triggerImport}
+              title={!cot ? "Enregistrez d'abord la cotation pour pouvoir importer" : isLocked ? 'Cotation validée — verrouillée (RG 15)' : ''}>
+              <Upload size={13}/> Importer
+            </button>
+            <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleImportFile}/>
+            <button className="btn btn-ghost btn-sm" disabled={!cot} onClick={()=>setHistOpen(true)}
+              title={!cot ? "Enregistrez d'abord la cotation" : ''}>
+              <HistoryIcon size={13}/> Historique
+            </button>
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -459,8 +575,8 @@ function CotationForm({ pc, onBack }) {
                     <td>{lg.tsf||0}</td><td>{lg.parking||0}</td><td>{lg.guide||0}</td>
                     <td className="max-w-[80px] truncate text-gray-400">{lg.observation||'—'}</td>
                     <td className="text-center">
-                      <button className="btn btn-ghost btn-xs mr-1" onClick={()=>openEditLigne(i)}><Pencil size={10}/></button>
-                      <button className="btn btn-danger btn-xs" onClick={()=>deleteLigne(i)}><Trash2 size={10}/></button>
+                      <button className="btn btn-ghost btn-xs mr-1" disabled={isLocked} onClick={()=>openEditLigne(i)}><Pencil size={10}/></button>
+                      <button className="btn btn-danger btn-xs" disabled={isLocked} onClick={()=>deleteLigne(i)}><Trash2 size={10}/></button>
                     </td>
                   </tr>
                 ))
@@ -478,7 +594,7 @@ function CotationForm({ pc, onBack }) {
             {[['car','CAR'],['fuel','FUEL'],['tax','TAX'],['guide','GUIDE'],['comm','COMM'],['fee','FILE FEE'],['flight','FLIGHT'],['remise','REMISE']].map(([k,l])=>(
               <div key={k} className="form-group mb-0">
                 <label className="form-label">{l} (€)</label>
-                <input type="number" step="0.01" className="form-control py-2" value={fix[k]}
+                <input type="number" step="0.01" className="form-control py-2" value={fix[k]} disabled={isLocked}
                   onChange={e=>setFix(f=>({...f,[k]:e.target.value}))}/>
               </div>
             ))}
@@ -517,7 +633,8 @@ function CotationForm({ pc, onBack }) {
             <Printer size={15}/> Aperçu PDF
           </button>
         )}
-        <button className="btn btn-success btn-lg" onClick={saveCot} disabled={save.isPending}>
+        <button className="btn btn-success btn-lg" onClick={saveCot} disabled={save.isPending || isLocked}
+          title={isLocked ? 'Cotation validée — verrouillée (RG 15)' : ''}>
           <Save size={16}/> {save.isPending?'Enregistrement...':'Tout Enregistrer'}
         </button>
       </div>
@@ -529,6 +646,45 @@ function CotationForm({ pc, onBack }) {
         open={printOpen}
         onClose={() => setPrintOpen(false)}
       />
+
+      {/* Nouvelle fonctionnalité : historique des versions de la cotation */}
+      <Modal open={histOpen} onClose={()=>setHistOpen(false)} title="Historique des modifications" icon={HistoryIcon} size="lg"
+        footer={<button className="btn btn-ghost" onClick={()=>setHistOpen(false)}>Fermer</button>}
+      >
+        {histLoading ? (
+          <div className="py-8 text-center text-gray-400">Chargement...</div>
+        ) : historique.length === 0 ? (
+          <div className="py-8 text-center text-gray-400">
+            <HistoryIcon size={32} className="mx-auto mb-3 opacity-30"/>
+            Aucune modification enregistrée pour l'instant.
+          </div>
+        ) : (
+          <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+            {historique.map(v => (
+              <div key={v.id} className="border border-gray-200 dark:border-gray-700 rounded-xl p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-black px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
+                    Version {v.numero}
+                  </span>
+                  <span className="text-xs text-gray-400">{fmtDateTime(v.modifie_le)} — {v.modifie_par_nom || 'Utilisateur supprimé'}</span>
+                </div>
+                <div className="grid grid-cols-4 gap-2 text-xs mb-2">
+                  {[['CAR',v.snapshot.car],['FUEL',v.snapshot.fuel],['TAX',v.snapshot.tax],['GUIDE',v.snapshot.guide]].map(([l,val])=>(
+                    <div key={l} className="text-center p-1.5 bg-gray-50 dark:bg-gray-800 rounded">
+                      <div className="text-[9px] text-gray-400 uppercase">{l}</div>
+                      <div className="font-bold">{(+val).toLocaleString('fr-FR')} €</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="text-xs text-gray-500">
+                  État avant cette modification : <strong>{v.snapshot.lignes.length}</strong> ligne{v.snapshot.lignes.length>1?'s':''},
+                  {' '}TOTAL 5 : <strong className="text-brand-green">{(+v.snapshot.total5).toLocaleString('fr-FR')} €</strong>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Modal>
 
       {/* Ligne Modal */}
       <Modal open={lgModal} onClose={()=>setLgModal(false)} title={editLigne!==null?'Modifier une Ligne':'Ajouter une Ligne'} icon={FileText} size="lg"

@@ -64,8 +64,11 @@ export default function SuperviseurInsert() {
           </h3>
           <div className="flex gap-2">
             <button className="btn btn-ghost btn-sm" onClick={refetch}><RefreshCw size={13}/> Actualiser</button>
-            <a href={superviseurAPI.exportCsv() + '&action=INSERT'} target="_blank" rel="noreferrer"
-              className="btn btn-ghost btn-sm"><Download size={13}/> CSV</a>
+            <button className="btn btn-ghost btn-sm"
+              onClick={() => superviseurAPI.exportCsv('?action=INSERT')
+                .catch(err => alert(`Échec de l'export CSV : ${err.message}`))}>
+              <Download size={13}/> CSV
+            </button>
           </div>
         </div>
 

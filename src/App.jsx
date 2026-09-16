@@ -114,11 +114,7 @@ export default function App() {
       <Route path="/finance/dossier-vente"
       element={<RequireAuth depts={FINANCE}><DossierVenteFinance /></RequireAuth>} />
       <Route path="/finance/dossier-booking"
-      element={<RequireAuth depts={FINANCE}><DossierBookingFinance /></RequireAuth>} />  
-      <Route path="/finance/dossier-vente"
-      element={<RequireAuth depts={FINANCE}><DossierVenteFinance /></RequireAuth>} />
-      <Route path="/finance/dossier-booking"
-      element={<RequireAuth depts={FINANCE}><DossierBookingFinance /></RequireAuth>} /> 
+      element={<RequireAuth depts={FINANCE}><DossierBookingFinance /></RequireAuth>} />
     
       {/* Administration */}
       <Route path="/admin"               element={<RequireAuth depts={ADMIN}><AdminDashboard /></RequireAuth>} />

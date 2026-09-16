@@ -130,3 +130,25 @@
 .dark .tbl thead th { @apply bg-gray-800 border-gray-700 text-gray-400; }
 .dark .tbl tbody tr { @apply border-gray-800 hover:bg-gray-800/50; }
 .dark .tbl td { @apply text-gray-300; }
+
+
+/* ✅ Fix Edge : forcer le scroll sur html/body uniquement */
+html, body {
+  height: 100%;
+  overflow-x: hidden;
+}
+
+/* ✅ Fix Edge : s'assurer que #root ne crée pas de nouveau contexte */
+#root {
+  min-height: 100%;
+  /* NE PAS mettre overflow: hidden ici */
+}
+
+/* ✅ Fix : supprimer animate-fade-in si elle utilise transform */
+@keyframes fadeIn {
+  from { opacity: 0; }   /* ← pas de translateY ici */
+  to   { opacity: 1; }
+}
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out;
+}
