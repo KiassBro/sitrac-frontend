@@ -2,13 +2,14 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bell, BellOff, Check, CheckCheck, ExternalLink, Search } from 'lucide-react'
+import { Bell, BellOff, Check, CheckCheck, ExternalLink, Search, Mail, Send } from 'lucide-react'
 import { useConfirm } from '../hooks/useConfirm'
+import { useAuthStore } from '../store/authStore'
 import { superviseurAPI } from '../utils/api'
 import Layout from '../components/Layout/Layout'
 import { Modal, StatCard } from '../components/UI/index.jsx'
 import { ApiState } from '../components/UI/ApiLoader.jsx'
-import { timeAgo } from '../utils/storage'
+import { timeAgo, fmtDateTime } from '../utils/storage'
 
 const CAT_META = {
   sales:   { label:'Sales',   bg:'bg-orange-100 dark:bg-orange-900/30', text:'text-orange-700 dark:text-orange-400' },
@@ -37,6 +38,8 @@ export default function Notifications() {
   const { confirm } = useConfirm()
   const navigate  = useNavigate()
   const qc        = useQueryClient()
+  const { user }  = useAuthStore()
+  const canManageRelances = user?.dept === 'Superviseur' || user?.dept === 'Administration'
 
   const { data: all = [], isLoading, error, refetch } = useQuery({
     queryKey: ['notifications'],
@@ -51,6 +54,33 @@ export default function Notifications() {
   const markAllReadMut = useMutation({
     mutationFn: () => superviseurAPI.markAllNotifsRead(),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['notifications'] }),
+  })
+
+  // Nouvelle fonctionnalité : relances/alertes automatiques par email
+  // (échéance paiement + digest dossiers incomplets), réservé Superviseur/Admin.
+  const { data: relances = [] } = useQuery({
+    queryKey: ['relances'],
+    queryFn:  () => superviseurAPI.getRelances('?page_size=10').then(r => r.results || r),
+    enabled:  canManageRelances,
+  })
+  const envoyerRelancesMut = useMutation({
+    mutationFn: (dryRun) => superviseurAPI.envoyerRelances(dryRun),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ['relances'] })
+      const total = res.paiement.envoyes + res.digest_incomplets.envoyes
+      alert(
+        total > 0
+          ? `${res.paiement.envoyes} relance(s) paiement et ${res.digest_incomplets.envoyes} digest(s) envoyé(s).`
+          : "Aucune relance à envoyer pour l'instant (tout est déjà à jour ou déjà envoyé aujourd'hui)."
+      )
+    },
+    onError: (e) => alert(`Échec : ${e.message}`),
+  })
+  const envoyerRelancesMaintenant = () => confirm({
+    icon:'📧', type:'warning', title:'Envoyer les relances maintenant',
+    msg:"Cela enverra immédiatement les emails de relance (échéance de paiement) et les digests de dossiers incomplets qui n'ont pas déjà été envoyés aujourd'hui. Continuer ?",
+    confirmText:'Oui, envoyer',
+    onConfirm: () => envoyerRelancesMut.mutate(false),
   })
 
   const [filter, setFilter] = useState('all')
@@ -147,6 +177,47 @@ export default function Notifications() {
           )
         }
       </ApiState>
+
+      {/* Nouvelle fonctionnalité : relances/alertes automatiques par email */}
+      {canManageRelances && (
+        <div className="card mt-6">
+          <div className="card-header">
+            <h3 className="font-title font-bold text-sm text-gray-800 dark:text-gray-200 flex items-center gap-2">
+              <Mail size={14} className="text-orange"/> Relances automatiques par email
+            </h3>
+            <button className="btn btn-primary btn-sm" disabled={envoyerRelancesMut.isPending} onClick={envoyerRelancesMaintenant}>
+              <Send size={13}/> {envoyerRelancesMut.isPending ? 'Envoi...' : 'Envoyer maintenant'}
+            </button>
+          </div>
+          <div className="p-3 text-xs text-gray-500 border-b border-gray-100 dark:border-gray-800">
+            Envoi automatique quotidien (planifié côté serveur) : rappel de solde au client si le départ approche
+            (≤15 jours) et le paiement n'est pas soldé, et digest interne par département listant les dossiers incomplets (RG 28).
+          </div>
+          <div className="overflow-x-auto">
+            <table className="tbl text-xs">
+              <thead><tr><th>Date</th><th>Type</th><th>Destinataire</th><th>Objet</th><th>Statut</th></tr></thead>
+              <tbody>
+                {relances.length === 0
+                  ? <tr><td colSpan={5} className="py-6 text-center text-gray-400">Aucune relance envoyée pour l'instant</td></tr>
+                  : relances.map(r => (
+                    <tr key={r.id}>
+                      <td className="whitespace-nowrap">{fmtDateTime(r.envoye_le)}</td>
+                      <td>{r.type_relance === 'paiement' ? 'Échéance paiement' : 'Digest dossiers incomplets'}</td>
+                      <td className="text-gray-500">{r.destinataire}</td>
+                      <td className="max-w-[220px] truncate" title={r.objet}>{r.objet}</td>
+                      <td>
+                        {r.reussi
+                          ? <span className="text-brand-green font-bold">✓ Envoyé</span>
+                          : <span className="text-brand-red font-bold" title={r.detail_erreur}>✗ Échec</span>}
+                      </td>
+                    </tr>
+                  ))
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       <Modal open={!!detail} onClose={()=>setDetail(null)} title={detail?.title||''} icon={Bell}
         footer={<>

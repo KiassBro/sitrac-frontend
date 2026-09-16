@@ -228,6 +228,8 @@ export const salesAPI = {
   // RG 15 : verrouillage après validation
   validerFacturePro:   (pcId) => api.post(`/sales/programme-clients/${pcId}/facture-pro/valider/`),
   devaliderFacturePro: (pcId) => api.post(`/sales/programme-clients/${pcId}/facture-pro/devalider/`),
+  // Nouvelle fonctionnalité : historique des versions de facture pro
+  getFactureProHistorique: (pcId) => api.get(`/sales/programme-clients/${pcId}/facture-pro/historique/`),
 
   // ── Cotation Libre ──────────────────────────────────────────
   getCotationsLibres: (params = '') => api.get(`/sales/cotations-libres/${params}`),
@@ -297,6 +299,10 @@ export const superviseurAPI = {
   markNotifRead:     (id)       => api.post('/superviseur/notifications/mark-read/', { id }),
   markAllNotifsRead: ()         => api.post('/superviseur/notifications/mark-all-read/'),
 
+  // Relances/alertes automatiques par email (échéance paiement, dossiers incomplets)
+  getRelances:      (params = '') => api.get(`/superviseur/relances/${params}`),
+  envoyerRelances:  (dryRun = false) => api.post('/superviseur/relances/envoyer/', { dry_run: dryRun }),
+
   // Historique des taux de change (RG 35)
   getTauxChangeHistorique: (params = '') => api.get(`/superviseur/taux-change/${params}`),
   getTauxChangeCourant:    ()            => api.get('/superviseur/taux-change/courant/'),
@@ -304,6 +310,11 @@ export const superviseurAPI = {
 
   // Tableau de bord KPI
   getKpiDashboard: (annee = '') => api.get(`/superviseur/kpi/${annee ? `?annee=${annee}` : ''}`),
+  // Nouvelle fonctionnalité : export PDF téléchargeable du rapport KPI
+  downloadKpiPdf: (annee = '') => downloadFile(
+    `/superviseur/kpi/pdf/${annee ? `?annee=${annee}` : ''}`,
+    `sitrac_rapport_kpi_${annee || 'global'}.pdf`
+  ),
 }
 
 

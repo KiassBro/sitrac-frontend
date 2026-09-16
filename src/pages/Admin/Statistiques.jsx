@@ -1,5 +1,6 @@
 import { BarChart, Bar, Cell, LineChart, Line, PieChart, Pie, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts'
-import { BarChart2, TrendingUp, Users, Database, DollarSign, ArrowRightCircle } from 'lucide-react'
+import { BarChart2, TrendingUp, Users, Database, DollarSign, ArrowRightCircle, Download } from 'lucide-react'
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuditStats, useProgrammeClients, useClients, useDestinations, useProgrammes, useUtilisateurs } from '../../hooks/useApi'
 import { superviseurAPI } from '../../utils/api'
@@ -47,6 +48,19 @@ export default function Statistiques() {
     queryFn:  () => superviseurAPI.getKpiDashboard(),
   })
 
+  // Nouvelle fonctionnalité : export PDF téléchargeable du rapport KPI
+  const [pdfBusy, setPdfBusy] = useState(false)
+  const telechargerPdfKpi = async () => {
+    setPdfBusy(true)
+    try {
+      await superviseurAPI.downloadKpiPdf()
+    } catch (e) {
+      alert(`Échec du téléchargement : ${e.message}`)
+    } finally {
+      setPdfBusy(false)
+    }
+  }
+
   return (
     <Layout breadcrumb={['SITRAC','Administration','Statistiques']}>
       <div className="mb-5">
@@ -70,6 +84,9 @@ export default function Statistiques() {
             <h3 className="font-title font-bold text-sm flex items-center gap-2">
               <DollarSign size={14} className="text-brand-green"/> Indicateurs Financiers (données réelles)
             </h3>
+            <button className="btn btn-ghost btn-sm" disabled={pdfBusy || !kpi} onClick={telechargerPdfKpi}>
+              <Download size={13}/> {pdfBusy ? 'Génération...' : 'Télécharger PDF'}
+            </button>
           </div>
           {kpiLoading ? (
             <div className="p-8 text-center text-gray-400 text-sm">Chargement...</div>
