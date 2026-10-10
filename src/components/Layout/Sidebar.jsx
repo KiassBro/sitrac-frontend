@@ -7,21 +7,41 @@ import {
   Users, Car, BarChart2, ClipboardList, Package, FileCheck,
   CreditCard, FolderOpen, Receipt, Shield, Settings,
   History, Database, PlusCircle, Edit, Trash2,
-  LogOut, ChevronLeft, ChevronRight, Folder, Bot
+  LogOut, ChevronLeft, ChevronRight, Folder, Bot, Handshake, Building2, CalendarRange, Inbox, Star, FileSpreadsheet
 } from 'lucide-react'
+
+// Référentiel des prestataires (hôtels, transporteurs, guides, parcs…)
+const PRESTATAIRES = { to:'/prestataires', icon:Building2, label:'Prestataires' }
+// Planning des chauffeurs, guides et véhicules
+const PLANNING = { to:'/planning', icon:CalendarRange, label:'Planning ressources' }
+// Demandes de devis (prospects), avant le dossier client
+const PROSPECTS = { to:'/prospects', icon:Inbox, label:'Prospects' }
+// Journaux et écritures pour la comptabilité
+const EXPORTS_COMPTA = { to:'/finance/exports', icon:FileSpreadsheet, label:'Exports comptables' }
+
+// Client & Communication : confirmation des devis, échéancier, espace client, messages
+const RELATION_CLIENT = [
+  { section: 'Relation client' },
+  { to:'/relation-client',         icon:Handshake,      label:'Suivi client & paiements' },
+  { to:'/satisfaction',            icon:Star,           label:'Satisfaction voyageurs' },
+]
 
 const DEPT_LINKS = {
   Sales: [
     { section: 'Base de données' },
     { to:'/sales/destinations',    icon:MapPin,         label:'Destinations'          },
     { to:'/sales/programmes',      icon:Route,          label:'Programmes'            },
+    PRESTATAIRES,
+    PLANNING,
     { to:'/sales/cotation-libre',  icon:Calculator,     label:'Cotation Libre'        },
     { to:'/sales/facturepro-libre',icon:FileText,       label:'Facture Pro Libre'     },
     { section: 'Dossier Client' },
+    PROSPECTS,
     { to:'/sales/gi',              icon:User,           label:'Informations Générales'},
     { to:'/sales/pc',              icon:Car,            label:'Programme Client'      },
     { to:'/sales/cotation',        icon:FileText,       label:'Cotation'              },
     { to:'/sales/facture-pro',     icon:BarChart2,      label:'Facture Pro'           },
+    ...RELATION_CLIENT,
   ],
   Booking: [
     { section: 'Dossier Booking' },
@@ -29,6 +49,10 @@ const DEPT_LINKS = {
     { to:'/booking/provision',      icon:Package,        label:'Provision'             },
     { section: 'Lecture seule' },
     { to:'/booking/dossier-vente',  icon:Folder,         label:'Dossiers de vente'     },
+    { section: 'Référentiel' },
+    PRESTATAIRES,
+    PLANNING,
+    ...RELATION_CLIENT,
   ],
   Finance: [
     { section: 'Dossier Finance' },
@@ -36,15 +60,23 @@ const DEPT_LINKS = {
     { to:'/finance/paiement',       icon:CreditCard,     label:'Paiement Client'       },
     { to:'/finance/cloture',        icon:FolderOpen,     label:'Clôture'               },
     { to:'/finance/recu',           icon:Receipt,        label:'Reçu'                  },
+    EXPORTS_COMPTA,
     { section: 'Lecture seule' },
     { to:'/finance/dossier-vente',  icon:Folder,         label:'Dossiers de vente'     },
     { to:'/finance/dossier-booking',icon:FolderOpen,     label:'Dossiers Booking'      },
+    { section: 'Référentiel' },
+    PRESTATAIRES,
+    PLANNING,
+    ...RELATION_CLIENT,
   ],
   Administration: [
     { section: 'Base de données' },
     { to:'/sales/destinations',    icon:MapPin,          label:'Destinations'          },
     { to:'/sales/programmes',      icon:Route,           label:'Programmes'            },
+    PRESTATAIRES,
+    PLANNING,
     { section: 'Dossier Client' },
+    PROSPECTS,
     { to:'/sales/gi',              icon:User,            label:'Informations Générales'},
     { to:'/sales/pc',              icon:Car,             label:'Programme Client'      },
     { to:'/sales/cotation',        icon:FileText,        label:'Cotation'              },
@@ -57,6 +89,8 @@ const DEPT_LINKS = {
     { to:'/finance/paiement',      icon:CreditCard,      label:'Paiement Client'       },
     { to:'/finance/cloture',       icon:FolderOpen,      label:'Clôture'               },
     { to:'/finance/recu',          icon:Receipt,         label:'Reçu'                  },
+    EXPORTS_COMPTA,
+    ...RELATION_CLIENT,
     { section: 'Administration' },
     { to:'/admin',                 icon:Shield,          label:'Tableau de bord Admin' },
     { to:'/admin/utilisateurs',    icon:Settings,        label:'Utilisateurs'          },
@@ -71,6 +105,12 @@ const DEPT_LINKS = {
     { to:'/superviseur/update',    icon:Edit,            label:'UPDATE'                },
     { to:'/superviseur/delete',    icon:Trash2,          label:'DELETE'                },
     { to:'/superviseur/stats',     icon:BarChart2,       label:'Statistiques'          },
+    PROSPECTS,
+    EXPORTS_COMPTA,
+    { section: 'Référentiel' },
+    PRESTATAIRES,
+    PLANNING,
+    ...RELATION_CLIENT,
   ],
 }
 

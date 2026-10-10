@@ -7,6 +7,7 @@ import { bookingAPI } from '../../utils/api'
 import { useConfirm } from '../../hooks/useConfirm'
 import toast from 'react-hot-toast'
 import Layout from '../../components/Layout/Layout'
+import ChampPrestataire from '../../components/Prestataires/ChampPrestataire'
 import { Modal, Badge, SearchInput, StatCard, Alert } from '../../components/UI/index.jsx'
 import { ApiState } from '../../components/UI/ApiLoader.jsx'
 import { fmtDate, fmt, today } from '../../utils/storage'
@@ -183,7 +184,7 @@ function ProvisionForm({ pc, onBack }) {
         <div className="grid grid-cols-2 gap-4">
           <div className="form-group"><label className="form-label">Date</label><input type="date" className="form-control" {...lgMethods.register('date')}/></div>
           <div className="form-group col-span-2"><label className="form-label">Description <span className="form-req">*</span></label><input className="form-control" placeholder="Ex: Hébergement Hôtel Ihosy..." {...lgMethods.register('description',{required:true})}/></div>
-          <div className="form-group"><label className="form-label">Prestataire</label><input className="form-control" {...lgMethods.register('prestataire')}/></div>
+          <div className="form-group"><label className="form-label">Prestataire</label><ChampPrestataire form={lgMethods} name="prestataire" champMontant="montant"/></div>
           <div className="form-group"><label className="form-label">Montant (€) <span className="form-req">*</span></label><input type="number" step="0.01" className="form-control" placeholder="0.00" {...lgMethods.register('montant',{required:true,min:0})}/></div>
         </div>
       </Modal>

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { FileText, Plus, Pencil, Trash2, ArrowLeft, Save, Printer, Download, Upload, Lock, Unlock, HistoryIcon } from 'lucide-react'
 import { useProgrammeClients, useCotation, useCotationMutation } from '../../hooks/useApi'
@@ -6,10 +6,12 @@ import { useQuery } from '@tanstack/react-query'
 import { useConfirm } from '../../hooks/useConfirm'
 import { useAuthStore } from '../../store/authStore'
 import Layout from '../../components/Layout/Layout'
+import ChampPrestataire from '../../components/Prestataires/ChampPrestataire'
 import { Modal, Badge, SearchInput } from '../../components/UI/index.jsx'
 import { ApiState } from '../../components/UI/ApiLoader.jsx'
 import { fmtDate, fmt, fmtAr, fmtDateTime } from '../../utils/storage'
 import { salesAPI } from '../../utils/api'
+import { tauxAPI } from '../../utils/tauxApi'
 
 // ─── Modal Aperçu PDF Cotation ─────────────────────────────────
 function CotationPrintModal({ pc, data, open, onClose }) {
@@ -376,7 +378,7 @@ function CotationForm({ pc, onBack }) {
   const [lockBusy,     setLockBusy]   = useState(false)
   const [histOpen,     setHistOpen]   = useState(false)
   const fileInputRef = useRef(null)
-  const isLocked = !!cot?.valide
+  const isLocked = !!cot?.is_locked
 
   const { data: historique = [], isLoading: histLoading } = useQuery({
     queryKey: ['cotation-historique', pc.id],
@@ -384,7 +386,13 @@ function CotationForm({ pc, onBack }) {
     enabled:  histOpen && !!cot,
   })
 
-  const { register, handleSubmit, reset } = useForm()
+  const { register, handleSubmit, reset, watch, setValue } = useForm()
+
+  // RG 35 : une nouvelle cotation part du taux de référence du jour (mis à jour automatiquement)
+  const { data: tauxRef } = useQuery({ queryKey: ['taux-actuel'], queryFn: tauxAPI.actuel, enabled: !isLoading && !cot })
+  useEffect(() => {
+    if (!cot && tauxRef?.taux && +taux === 4800) setTaux(+tauxRef.taux)
+  }, [tauxRef, cot]) // eslint-disable-line
 
   if (cot && !initialized) {
     setLignes(cot.lignes || [])
@@ -459,10 +467,15 @@ function CotationForm({ pc, onBack }) {
     })
   }
 
-  // ── RG 15 : verrouillage après validation ────────────────────
+  // ── RG 15 : workflow de statut à 3 états (Brouillon → Validé → Verrouillé)
+  const canValiderOuBrouillon = user?.dept === 'Sales' || user?.dept === 'Administration'
+  const canVerrouiller        = user?.dept === 'Superviseur' || user?.dept === 'Administration'
+  const canDeverrouiller      = user?.dept === 'Administration'
+
   const validerCotation = () => confirm({
     icon:'🔒', type:'warning', title:'Valider la cotation',
-    msg:"Une fois validée, cette cotation ne pourra plus être modifiée (RG 15). Continuer ?",
+    msg:"Une fois validée, cette cotation ne pourra plus être modifiée directement (RG 15). "
+        +"Vous pourrez la repasser en brouillon vous-même si besoin, tant qu'elle n'est pas verrouillée.",
     confirmText:'Oui, valider',
     onConfirm: async () => {
       setLockBusy(true)
@@ -472,13 +485,38 @@ function CotationForm({ pc, onBack }) {
     },
   })
 
-  const devaliderCotation = () => confirm({
-    icon:'🔓', type:'warning', title:'Dévalider la cotation',
-    msg:"Cette cotation redeviendra modifiable. Réservé à l'Administration.",
-    confirmText:'Oui, dévalider',
+  const repasserBrouillonCotation = () => confirm({
+    icon:'✏️', type:'warning', title:'Repasser en brouillon',
+    msg:"Cette cotation redeviendra modifiable. Vous pourrez la valider de nouveau ensuite.",
+    confirmText:'Oui, repasser en brouillon',
     onConfirm: async () => {
       setLockBusy(true)
-      try { await salesAPI.devaliderCotation(pc.id); await refetch() }
+      try { await salesAPI.repasserBrouillonCotation(pc.id); await refetch() }
+      catch (e) { alert(`Échec : ${e.message}`) }
+      finally { setLockBusy(false) }
+    },
+  })
+
+  const verrouillerCotation = () => confirm({
+    icon:'🔐', type:'warning', title:'Verrouiller la cotation',
+    msg:"Verrouillage de gestion définitif : plus personne (y compris Sales) ne pourra la "
+        +"repasser en brouillon — seul un administrateur pourra la déverrouiller. Continuer ?",
+    confirmText:'Oui, verrouiller',
+    onConfirm: async () => {
+      setLockBusy(true)
+      try { await salesAPI.verrouillerCotation(pc.id); await refetch() }
+      catch (e) { alert(`Échec du verrouillage : ${e.message}`) }
+      finally { setLockBusy(false) }
+    },
+  })
+
+  const deverrouillerCotation = () => confirm({
+    icon:'🔓', type:'warning', title:'Déverrouiller la cotation',
+    msg:"La cotation repassera au statut 'Validée' — Sales pourra alors la repasser en brouillon si besoin.",
+    confirmText:'Oui, déverrouiller',
+    onConfirm: async () => {
+      setLockBusy(true)
+      try { await salesAPI.deverrouillerCotation(pc.id); await refetch() }
       catch (e) { alert(`Échec : ${e.message}`) }
       finally { setLockBusy(false) }
     },
@@ -495,31 +533,57 @@ function CotationForm({ pc, onBack }) {
         <h1 className="page-title text-xl"><FileText size={20} className="text-orange"/> Cotation — {pc.client_nom}</h1>
       </div>
 
-      {/* RG 15 : bannière de statut de validation */}
-      {isLocked ? (
+      {/* RG 15 : bannière de statut — workflow à 3 états */}
+      {cot && cot.statut === 'verrouille' && (
         <div className="card mb-4 p-4 flex items-center justify-between gap-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
           <div className="flex items-center gap-3">
             <Lock size={18} className="text-brand-green flex-shrink-0"/>
             <div className="text-sm text-brand-green">
-              <strong>Cotation validée</strong> le {fmtDateTime(cot.valide_le)} par {cot.valide_par_nom || '—'}.
-              Elle ne peut plus être modifiée (RG 15).
+              <strong>Cotation verrouillée</strong> le {fmtDateTime(cot.verrouille_le)} par {cot.verrouille_par_nom || '—'}
+              {' '}(validée le {fmtDateTime(cot.valide_le)} par {cot.valide_par_nom || '—'}). Verrouillage définitif — RG 15.
             </div>
           </div>
-          {user?.dept === 'Administration' && (
-            <button className="btn btn-ghost btn-sm flex-shrink-0" disabled={lockBusy} onClick={devaliderCotation}>
-              <Unlock size={13}/> Dévalider
+          {canDeverrouiller && (
+            <button className="btn btn-ghost btn-sm flex-shrink-0" disabled={lockBusy} onClick={deverrouillerCotation}>
+              <Unlock size={13}/> Déverrouiller
             </button>
           )}
         </div>
-      ) : cot && (
+      )}
+      {cot && cot.statut === 'valide' && (
+        <div className="card mb-4 p-4 flex items-center justify-between gap-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+          <div className="flex items-center gap-3">
+            <Lock size={18} className="text-brand-blue flex-shrink-0"/>
+            <div className="text-sm text-brand-blue">
+              <strong>Cotation validée</strong> le {fmtDateTime(cot.valide_le)} par {cot.valide_par_nom || '—'}.
+              Elle ne peut plus être modifiée directement (RG 15).
+            </div>
+          </div>
+          <div className="flex gap-2 flex-shrink-0">
+            {canValiderOuBrouillon && (
+              <button className="btn btn-ghost btn-sm" disabled={lockBusy} onClick={repasserBrouillonCotation}>
+                <Unlock size={13}/> Repasser en brouillon
+              </button>
+            )}
+            {canVerrouiller && (
+              <button className="btn btn-primary btn-sm" disabled={lockBusy} onClick={verrouillerCotation}>
+                <Lock size={13}/> Verrouiller
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+      {cot && cot.statut === 'brouillon' && (
         <div className="card mb-4 p-4 flex items-center justify-between gap-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800">
           <div className="flex items-center gap-3 text-sm text-orange-700 dark:text-orange-400">
             <Lock size={18} className="flex-shrink-0"/>
-            Cette cotation est encore modifiable. Validez-la une fois définitive pour la verrouiller (RG 15).
+            Cette cotation est en brouillon, encore modifiable. Validez-la une fois définitive (RG 15).
           </div>
-          <button className="btn btn-primary btn-sm flex-shrink-0" disabled={lockBusy} onClick={validerCotation}>
-            <Lock size={13}/> Valider
-          </button>
+          {canValiderOuBrouillon && (
+            <button className="btn btn-primary btn-sm flex-shrink-0" disabled={lockBusy} onClick={validerCotation}>
+              <Lock size={13}/> Valider
+            </button>
+          )}
         </div>
       )}
 
@@ -552,7 +616,7 @@ function CotationForm({ pc, onBack }) {
               <Download size={13}/> Exporter
             </button>
             <button className="btn btn-ghost btn-sm" disabled={!cot || csvBusy || isLocked} onClick={triggerImport}
-              title={!cot ? "Enregistrez d'abord la cotation pour pouvoir importer" : isLocked ? 'Cotation validée — verrouillée (RG 15)' : ''}>
+              title={!cot ? "Enregistrez d'abord la cotation pour pouvoir importer" : isLocked ? `Cotation ${cot?.statut === 'verrouille' ? 'verrouillée' : 'validée'} — modification bloquée (RG 15)` : ''}>
               <Upload size={13}/> Importer
             </button>
             <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleImportFile}/>
@@ -634,7 +698,7 @@ function CotationForm({ pc, onBack }) {
           </button>
         )}
         <button className="btn btn-success btn-lg" onClick={saveCot} disabled={save.isPending || isLocked}
-          title={isLocked ? 'Cotation validée — verrouillée (RG 15)' : ''}>
+          title={isLocked ? `Cotation ${cot?.statut === 'verrouille' ? 'verrouillée' : 'validée'} — modification bloquée (RG 15)` : ''}>
           <Save size={16}/> {save.isPending?'Enregistrement...':'Tout Enregistrer'}
         </button>
       </div>
@@ -694,7 +758,7 @@ function CotationForm({ pc, onBack }) {
           <div className="form-group"><label className="form-label">Jour</label><input className="form-control" placeholder="Lun, Mar..." {...register('jour')}/></div>
           <div className="form-group"><label className="form-label">Date</label><input type="date" className="form-control" {...register('date')}/></div>
           <div className="form-group"><label className="form-label">Route</label><input className="form-control" {...register('route')}/></div>
-          <div className="form-group"><label className="form-label">Hôtels</label><input className="form-control" {...register('hotels')}/></div>
+          <div className="form-group"><label className="form-label">Hôtels</label><ChampPrestataire form={{ register, watch, setValue }} name="hotels" champMontant="dbl" categories={['hebergement']} placeholder="Choisir un hôtel du référentiel ou saisir"/></div>
         </div>
         <div className="grid grid-cols-4 lg:grid-cols-7 gap-3 mt-2">
           {[['dbl','DBL'],['bf','BF'],['lunch','L'],['diner','D'],['tsf','TSF'],['parking','Park'],['guide','Guide']].map(([k,l])=>(

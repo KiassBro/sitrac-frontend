@@ -12,6 +12,7 @@ import {
 } from '../hooks/useApi'
 import { financeAPI } from '../utils/api'
 import Layout from '../components/Layout/Layout'
+import MaJournee from '../components/Tableau/MaJournee'
 import { StatCard } from '../components/UI/index.jsx'
 import {
   MapPin, Route, Users, FileText, FolderOpen,
@@ -412,6 +413,9 @@ export default function Dashboard() {
             onError={e=>e.target.style.display='none'}/>
         </div>
       </div>
+
+      {/* Actions du jour pour le département (devis, départs, échéances, planning…) */}
+      <MaJournee/>
 
       {/* Stats cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

@@ -9,6 +9,19 @@ export default {
         title: ['Montserrat', 'sans-serif'],
       },
       colors: {
+        // Espace client (portail) — mêmes teintes que les PDF et emails envoyés aux clients
+        rt: {
+          ink:        '#1E2A24',
+          canopy:     '#1F4D3A',
+          'canopy-dk':'#173A2C',
+          ocre:       '#E8A317',
+          'ocre-lt':  '#FBF1D9',
+          mist:       '#F2F5F3',
+          stone:      '#5B6B63',
+          line:       '#D5DDD8',
+          laterite:   '#B5462A',
+          'laterite-lt':'#F6E3DD',
+        },
         orange: {
           DEFAULT: '#F5A623',
           dark:    '#D4890A',

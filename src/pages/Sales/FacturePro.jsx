@@ -1,13 +1,16 @@
 import { useState, useRef } from 'react'
 import { useForm } from 'react-hook-form'
-import { FileCheck, Plus, Pencil, Trash2, ArrowLeft, Save, AlertCircle, Printer, Lock, Unlock, HistoryIcon } from 'lucide-react'
+import { FileCheck, Plus, Pencil, Trash2, ArrowLeft, Save, AlertCircle, Printer, Lock, Unlock, HistoryIcon, Calculator } from 'lucide-react'
 import { useProgrammeClients } from '../../hooks/useApi'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { salesAPI } from '../../utils/api'
+import { salesAPI, relationClientAPI } from '../../utils/api'
+import { useNavigate } from 'react-router-dom'
+import { Send } from 'lucide-react'
 import { useConfirm } from '../../hooks/useConfirm'
 import { useAuthStore } from '../../store/authStore'
 import toast from 'react-hot-toast'
 import Layout from '../../components/Layout/Layout'
+import GenererDepuisCotation from '../../components/FacturePro/GenererDepuisCotation'
 import { Modal, Badge, SearchInput, StatCard } from '../../components/UI/index.jsx'
 import { ApiState } from '../../components/UI/ApiLoader.jsx'
 import { fmtDate, fmtDateTime, fmt, today } from '../../utils/storage'
@@ -308,6 +311,7 @@ function FactureProForm({ pc, onBack }) {
   const [printFP,   setPrintFP]   = useState(null)
   const [lockBusy,  setLockBusy]  = useState(false)
   const [histOpen,  setHistOpen]  = useState(false)
+  const [genOpen,   setGenOpen]   = useState(false)
 
   const { register, handleSubmit, reset } = useForm()
 
@@ -318,7 +322,7 @@ function FactureProForm({ pc, onBack }) {
     onError: () => {},
   })
 
-  const isLocked = !!fp?.valide
+  const isLocked = !!fp?.is_locked
 
   const { data: historique = [], isLoading: histLoading } = useQuery({
     queryKey: ['facture-pro-historique', pc.id],
@@ -364,6 +368,13 @@ function FactureProForm({ pc, onBack }) {
     toast.success(editIdx!==null ? 'Ligne modifiée' : 'Ligne ajoutée')
   }
 
+  // Lignes proposées par « Depuis la cotation » : remplacent ou complètent les lignes actuelles
+  const appliquerCotation = (nouvelles, mode) => {
+    setLignes(prev => mode === 'ajouter' ? [...prev, ...nouvelles] : nouvelles)
+    setGenOpen(false)
+    toast.success('Lignes proposées depuis la cotation — vérifiez puis « Tout enregistrer »')
+  }
+
   const save = () => confirmSave(() => saveMut.mutate({
     programme_client: pc.id,
     date_facture:     dateFac,
@@ -380,10 +391,15 @@ function FactureProForm({ pc, onBack }) {
     setPrintOpen(true)
   }
 
-  // ── RG 15 : verrouillage après validation ────────────────────
+  // ── RG 15 : workflow de statut à 3 états (Brouillon → Validé → Verrouillé)
+  const canValiderOuBrouillon = user?.dept === 'Sales' || user?.dept === 'Administration'
+  const canVerrouiller        = user?.dept === 'Superviseur' || user?.dept === 'Administration'
+  const canDeverrouiller      = user?.dept === 'Administration'
+
   const validerFP = () => confirm({
     icon:'🔒', type:'warning', title:'Valider la facture pro',
-    msg:"Une fois validée, cette facture pro ne pourra plus être modifiée (RG 15). Continuer ?",
+    msg:"Une fois validée, cette facture pro ne pourra plus être modifiée directement (RG 15). "
+        +"Vous pourrez la repasser en brouillon vous-même si besoin, tant qu'elle n'est pas verrouillée.",
     confirmText:'Oui, valider',
     onConfirm: async () => {
       setLockBusy(true)
@@ -393,13 +409,38 @@ function FactureProForm({ pc, onBack }) {
     },
   })
 
-  const devaliderFP = () => confirm({
-    icon:'🔓', type:'warning', title:'Dévalider la facture pro',
-    msg:"Cette facture pro redeviendra modifiable. Réservé à l'Administration.",
-    confirmText:'Oui, dévalider',
+  const repasserBrouillonFP = () => confirm({
+    icon:'✏️', type:'warning', title:'Repasser en brouillon',
+    msg:"Cette facture pro redeviendra modifiable. Vous pourrez la valider de nouveau ensuite.",
+    confirmText:'Oui, repasser en brouillon',
     onConfirm: async () => {
       setLockBusy(true)
-      try { await salesAPI.devaliderFacturePro(pc.id); await refetch() }
+      try { await salesAPI.repasserBrouillonFacturePro(pc.id); await refetch() }
+      catch (e) { toast.error(`Échec : ${e.message}`) }
+      finally { setLockBusy(false) }
+    },
+  })
+
+  const verrouillerFP = () => confirm({
+    icon:'🔐', type:'warning', title:'Verrouiller la facture pro',
+    msg:"Verrouillage de gestion définitif : plus personne (y compris Sales) ne pourra la "
+        +"repasser en brouillon — seul un administrateur pourra la déverrouiller. Continuer ?",
+    confirmText:'Oui, verrouiller',
+    onConfirm: async () => {
+      setLockBusy(true)
+      try { await salesAPI.verrouillerFacturePro(pc.id); await refetch() }
+      catch (e) { toast.error(`Échec du verrouillage : ${e.message}`) }
+      finally { setLockBusy(false) }
+    },
+  })
+
+  const deverrouillerFP = () => confirm({
+    icon:'🔓', type:'warning', title:'Déverrouiller la facture pro',
+    msg:"La facture pro repassera au statut 'Validée' — Sales pourra alors la repasser en brouillon si besoin.",
+    confirmText:'Oui, déverrouiller',
+    onConfirm: async () => {
+      setLockBusy(true)
+      try { await salesAPI.deverrouillerFacturePro(pc.id); await refetch() }
       catch (e) { toast.error(`Échec : ${e.message}`) }
       finally { setLockBusy(false) }
     },
@@ -417,33 +458,62 @@ function FactureProForm({ pc, onBack }) {
         </h1>
       </div>
 
-      {/* RG 15 : bannière de statut de validation */}
-      {isLocked ? (
+      {/* RG 15 : bannière de statut — workflow à 3 états */}
+      {fp && fp.statut === 'verrouille' && (
         <div className="card mb-4 p-4 flex items-center justify-between gap-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
           <div className="flex items-center gap-3">
             <Lock size={18} className="text-brand-green flex-shrink-0"/>
             <div className="text-sm text-brand-green">
-              <strong>Facture pro validée</strong> le {fmtDateTime(fp.valide_le)} par {fp.valide_par_nom || '—'}.
-              Elle ne peut plus être modifiée (RG 15).
+              <strong>Facture pro verrouillée</strong> le {fmtDateTime(fp.verrouille_le)} par {fp.verrouille_par_nom || '—'}
+              {' '}(validée le {fmtDateTime(fp.valide_le)} par {fp.valide_par_nom || '—'}). Verrouillage définitif — RG 15.
             </div>
           </div>
-          {user?.dept === 'Administration' && (
-            <button className="btn btn-ghost btn-sm flex-shrink-0" disabled={lockBusy} onClick={devaliderFP}>
-              <Unlock size={13}/> Dévalider
+          {canDeverrouiller && (
+            <button className="btn btn-ghost btn-sm flex-shrink-0" disabled={lockBusy} onClick={deverrouillerFP}>
+              <Unlock size={13}/> Déverrouiller
             </button>
           )}
         </div>
-      ) : fp && (
+      )}
+      {fp && fp.statut === 'valide' && (
+        <div className="card mb-4 p-4 flex items-center justify-between gap-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+          <div className="flex items-center gap-3">
+            <Lock size={18} className="text-brand-blue flex-shrink-0"/>
+            <div className="text-sm text-brand-blue">
+              <strong>Facture pro validée</strong> le {fmtDateTime(fp.valide_le)} par {fp.valide_par_nom || '—'}.
+              Elle ne peut plus être modifiée directement (RG 15).
+            </div>
+          </div>
+          <div className="flex gap-2 flex-shrink-0">
+            {canValiderOuBrouillon && (
+              <button className="btn btn-ghost btn-sm" disabled={lockBusy} onClick={repasserBrouillonFP}>
+                <Unlock size={13}/> Repasser en brouillon
+              </button>
+            )}
+            {canVerrouiller && (
+              <button className="btn btn-primary btn-sm" disabled={lockBusy} onClick={verrouillerFP}>
+                <Lock size={13}/> Verrouiller
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+      {fp && fp.statut === 'brouillon' && (
         <div className="card mb-4 p-4 flex items-center justify-between gap-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800">
           <div className="flex items-center gap-3 text-sm text-orange-700 dark:text-orange-400">
             <Lock size={18} className="flex-shrink-0"/>
-            Cette facture pro est encore modifiable. Validez-la une fois définitive pour la verrouiller (RG 15).
+            Cette facture pro est en brouillon, encore modifiable. Validez-la une fois définitive (RG 15).
           </div>
-          <button className="btn btn-primary btn-sm flex-shrink-0" disabled={lockBusy} onClick={validerFP}>
-            <Lock size={13}/> Valider
-          </button>
+          {canValiderOuBrouillon && (
+            <button className="btn btn-primary btn-sm flex-shrink-0" disabled={lockBusy} onClick={validerFP}>
+              <Lock size={13}/> Valider
+            </button>
+          )}
         </div>
       )}
+
+      {/* Client & Communication : envoi du devis au client pour confirmation / signature */}
+      {fp && <EnvoiClient pcId={pc.id} fp={fp} peutEnvoyer={canValiderOuBrouillon} />}
 
       {/* Info dossier */}
       <div className="card mb-4">
@@ -487,6 +557,10 @@ function FactureProForm({ pc, onBack }) {
           <div className="flex gap-2">
             <button className="btn btn-primary btn-sm" disabled={isLocked} onClick={openAdd}>
               <Plus size={13}/> Ajouter une ligne
+            </button>
+            <button className="btn btn-ghost btn-sm" disabled={isLocked || !pc.a_cotation} onClick={()=>setGenOpen(true)}
+              title={!pc.a_cotation ? 'Ce dossier n’a pas encore de cotation' : 'Proposer les lignes à partir de la cotation'}>
+              <Calculator size={13}/> Depuis la cotation
             </button>
             <button className="btn btn-ghost btn-sm" disabled={!fp} onClick={()=>setHistOpen(true)}
               title={!fp ? "Enregistrez d'abord la facture pro" : ''}>
@@ -576,7 +650,7 @@ function FactureProForm({ pc, onBack }) {
         )}
         <button className="btn btn-success btn-lg" onClick={save}
           disabled={saveMut.isPending || isLocked}
-          title={isLocked ? 'Facture pro validée — verrouillée (RG 15)' : ''}>
+          title={isLocked ? `Facture pro ${fp?.statut === 'verrouille' ? 'verrouillée' : 'validée'} — modification bloquée (RG 15)` : ''}>
           <Save size={15}/>
           {saveMut.isPending ? 'Enregistrement...' : 'Enregistrer'}
         </button>
@@ -589,6 +663,10 @@ function FactureProForm({ pc, onBack }) {
         open={printOpen}
         onClose={() => setPrintOpen(false)}
       />
+
+      {/* Préremplissage depuis la cotation */}
+      <GenererDepuisCotation pc={pc} open={genOpen} onClose={()=>setGenOpen(false)}
+        onAppliquer={appliquerCotation} aDejaDesLignes={lignes.length > 0}/>
 
       {/* Nouvelle fonctionnalité : historique des versions de la facture pro */}
       <Modal open={histOpen} onClose={()=>setHistOpen(false)} title="Historique des modifications" icon={HistoryIcon} size="lg"
@@ -765,5 +843,46 @@ export default function FacturePro() {
         </ApiState>
       </div>
     </Layout>
+  )
+}
+
+// ── Client & Communication ──────────────────────────────────────
+// Bandeau compact : dernier envoi du devis au client et bouton d'envoi.
+// Le suivi détaillé (historique, échéancier, paiements) est dans « Suivi client & paiements ».
+const LIB_CONF = { envoyee:'envoyé, en attente de réponse', consultee:'ouvert par le client, en attente de réponse',
+  acceptee:'accepté et signé', refusee:'refusé', expiree:'expiré sans réponse', annulee:'annulé' }
+
+function EnvoiClient({ pcId, fp, peutEnvoyer }) {
+  const navigate = useNavigate()
+  const qc = useQueryClient()
+  const { data: demandes = [] } = useQuery({
+    queryKey: ['rc-confirmations', pcId],
+    queryFn: () => relationClientAPI.getSynthese(pcId).then(r => r.confirmations),
+  })
+  const derniere = demandes[0]
+  const envoyable = ['valide', 'verrouille'].includes(fp.statut)
+  const envoyer = useMutation({
+    mutationFn: () => relationClientAPI.envoyerDevis(pcId, {}),
+    onSuccess: (r) => { toast.success(r.resume); qc.invalidateQueries({ queryKey: ['rc-confirmations', pcId] }) },
+    onError: (e) => toast.error(e.message),
+  })
+  return (
+    <div className="card mb-4 p-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="text-sm text-gray-600 dark:text-gray-300">
+        {derniere
+          ? <>Devis client {LIB_CONF[derniere.statut]}{derniere.statut === 'refusee' && derniere.motif_refus ? ` — « ${derniere.motif_refus} »` : ''}
+              {' '}(envoyé le {fmtDateTime(derniere.envoyee_le)} à {derniere.email_destinataire}).</>
+          : envoyable ? "Ce devis n'a pas encore été envoyé au client pour confirmation."
+                      : 'Validez la facture pro pour pouvoir l\'envoyer au client à signer.'}
+      </div>
+      <div className="flex gap-2">
+        <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/relation-client?pc=${pcId}`)}>Suivi client</button>
+        {peutEnvoyer && envoyable && !['envoyee', 'consultee', 'acceptee'].includes(derniere?.statut) && (
+          <button className="btn btn-primary btn-sm" disabled={envoyer.isPending} onClick={() => envoyer.mutate()}>
+            <Send size={13}/> Envoyer au client à signer
+          </button>
+        )}
+      </div>
+    </div>
   )
 }

@@ -104,11 +104,17 @@ export function useClientMutations() {
 }
 
 // ─── PROGRAMME CLIENTS ─────────────────────────────────────────
-export function useProgrammeClients(params = '') {
+// RG 34 : les dossiers annulés sont masqués partout (cotation, facture, booking,
+// finance, tableaux de bord…), sauf là où on les demande explicitement
+// (page Programme Client : useProgrammeClients('', { inclureAnnules: true })).
+export function useProgrammeClients(params = '', { inclureAnnules = false } = {}) {
   return useQuery({
     queryKey: ['pcs', params],
     queryFn:  () => salesAPI.getPCs(params),
-    select:   d => d.results ?? d,
+    select:   d => {
+      const liste = d.results ?? d
+      return inclureAnnules ? liste : liste.filter(p => !p.annule)
+    },
   })
 }
 export function usePCMutations() {

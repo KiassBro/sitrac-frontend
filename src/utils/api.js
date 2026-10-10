@@ -214,9 +214,11 @@ export const salesAPI = {
   // RG 31/32 : Export/Import CSV des lignes de cotation
   exportCotationCsv: (pcId) => downloadFile(`/sales/programme-clients/${pcId}/cotation/export-csv/`, `cotation_pc${pcId}.csv`),
   importCotationCsv: (pcId, file) => uploadFile(`/sales/programme-clients/${pcId}/cotation/import-csv/`, file),
-  // RG 15 : verrouillage après validation
-  validerCotation:   (pcId) => api.post(`/sales/programme-clients/${pcId}/cotation/valider/`),
-  devaliderCotation: (pcId) => api.post(`/sales/programme-clients/${pcId}/cotation/devalider/`),
+  // RG 15 : workflow de statut à 3 états (Brouillon → Validé → Verrouillé)
+  validerCotation:      (pcId) => api.post(`/sales/programme-clients/${pcId}/cotation/valider/`),
+  repasserBrouillonCotation: (pcId) => api.post(`/sales/programme-clients/${pcId}/cotation/brouillon/`),
+  verrouillerCotation:  (pcId) => api.post(`/sales/programme-clients/${pcId}/cotation/verrouiller/`),
+  deverrouillerCotation:(pcId) => api.post(`/sales/programme-clients/${pcId}/cotation/deverrouiller/`),
   // Nouvelle fonctionnalité : historique des versions de cotation
   getCotationHistorique: (pcId) => api.get(`/sales/programme-clients/${pcId}/cotation/historique/`),
 
@@ -225,9 +227,11 @@ export const salesAPI = {
   saveFacturePro:  (pcId, data, exists) =>
     exists ? api.put(`/sales/programme-clients/${pcId}/facture-pro/`, data)
            : api.post(`/sales/programme-clients/${pcId}/facture-pro/`, data),
-  // RG 15 : verrouillage après validation
-  validerFacturePro:   (pcId) => api.post(`/sales/programme-clients/${pcId}/facture-pro/valider/`),
-  devaliderFacturePro: (pcId) => api.post(`/sales/programme-clients/${pcId}/facture-pro/devalider/`),
+  // RG 15 : workflow de statut à 3 états (Brouillon → Validé → Verrouillé)
+  validerFacturePro:      (pcId) => api.post(`/sales/programme-clients/${pcId}/facture-pro/valider/`),
+  repasserBrouillonFacturePro: (pcId) => api.post(`/sales/programme-clients/${pcId}/facture-pro/brouillon/`),
+  verrouillerFacturePro:  (pcId) => api.post(`/sales/programme-clients/${pcId}/facture-pro/verrouiller/`),
+  deverrouillerFacturePro:(pcId) => api.post(`/sales/programme-clients/${pcId}/facture-pro/deverrouiller/`),
   // Nouvelle fonctionnalité : historique des versions de facture pro
   getFactureProHistorique: (pcId) => api.get(`/sales/programme-clients/${pcId}/facture-pro/historique/`),
 
@@ -278,6 +282,7 @@ export const financeAPI = {
   updateCloture:     (id, data) => api.put(`/finance/clotures/${id}/`, data),
   getRecus:            (p = '') => api.get(`/finance/recus/${p}`),
   createRecu:          (data)   => api.post('/finance/recus/', data),
+  deleteRecu:          (id)     => api.delete(`/finance/recus/${id}/`),
 }
 
 export const superviseurAPI = {
@@ -320,4 +325,45 @@ export const superviseurAPI = {
 
 export const chatbotAPI = {
   send: (messages) => api.post('/chatbot/', { messages }),
+}
+
+// ─── Client & Communication (personnel) ─────────────────────────
+// Confirmation des devis, échéancier, espace client, documents, messages.
+export async function uploadDocumentClient(pcId, fichier, champs = {}) {
+  const token = TokenManager.getAccess()
+  const fd = new FormData()
+  fd.append('fichier', fichier)
+  Object.entries(champs).forEach(([k, v]) => fd.append(k, v))
+  const res = await fetch(`${BASE_URL}/relation-client/dossiers/${pcId}/documents/`, {
+    method: 'POST', headers: token ? { Authorization: `Bearer ${token}` } : {}, body: fd,
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.detail || data.fichier || Object.values(data).flat().join(' ') || `Erreur HTTP ${res.status}`)
+  return data
+}
+
+export const relationClientAPI = {
+  getDossiers:        (search = '') => api.get(`/relation-client/dossiers/${search ? `?search=${encodeURIComponent(search)}` : ''}`),
+  getSynthese:        (pcId)        => api.get(`/relation-client/dossiers/${pcId}/`),
+  // Confirmation / signature du devis
+  envoyerDevis:       (pcId, data)  => api.post(`/relation-client/dossiers/${pcId}/confirmations/envoyer/`, data),
+  annulerDemande:     (uuid, raison)=> api.post(`/relation-client/confirmations/${uuid}/annuler/`, { raison }),
+  downloadPdfDemande: (uuid, signe, nom) => downloadFile(`/relation-client/confirmations/${uuid}/pdf/${signe ? '?version=signe' : ''}`, nom),
+  // Échéancier et paiements en ligne
+  genererEcheancier:  (pcId, data)  => api.post(`/relation-client/dossiers/${pcId}/echeances/generer/`, data),
+  ajouterEcheance:    (pcId, data)  => api.post(`/relation-client/dossiers/${pcId}/echeances/`, data),
+  modifierEcheance:   (id, data)    => api.patch(`/relation-client/echeances/${id}/`, data),
+  annulerEcheance:    (id)          => api.delete(`/relation-client/echeances/${id}/`),
+  lienPaiement:       (pcId, echeanceId) => api.post(`/relation-client/dossiers/${pcId}/lien-paiement/`, { echeance_id: echeanceId }),
+  // Espace client
+  inviterPortail:     (clientId, email) => api.post(`/relation-client/clients/${clientId}/compte/`, email ? { email } : {}),
+  desactiverPortail:  (clientId)    => api.delete(`/relation-client/clients/${clientId}/compte/`),
+  // Documents
+  uploadDocument:     uploadDocumentClient,
+  modifierDocument:   (uuid, data)  => api.patch(`/relation-client/documents/${uuid}/`, data),
+  supprimerDocument:  (uuid)        => api.delete(`/relation-client/documents/${uuid}/`),
+  downloadDocument:   (uuid, nom)   => downloadFile(`/relation-client/documents/${uuid}/telecharger/`, nom),
+  // Préférences de communication (réutilise l'endpoint client existant)
+  majPreferences:     (clientId, data) => api.patch(`/sales/clients/${clientId}/`, data),
+  testSms:            (data)        => api.post('/communications/test/', data),
 }

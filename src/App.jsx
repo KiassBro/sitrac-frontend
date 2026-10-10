@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, lazy, Suspense } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from './store/authStore'
 
@@ -52,12 +52,45 @@ import SuperviseurStats      from './pages/Superviseur/Stats'
 import { Folder, FolderOpen, Calculator, FileText, PlusCircle, Edit, Trash2, BarChart2 } from 'lucide-react'
 import PlaceholderPage from './pages/PlaceholderPage'
 
+// Client & Communication — page du personnel
+import RelationClient        from './pages/RelationClient/RelationClient'
+import Prestataires          from './pages/Prestataires/Prestataires'
+import Planning              from './pages/Ressources/Planning'
+import Prospects             from './pages/Prospects/Prospects'
+import Satisfaction          from './pages/Satisfaction/Satisfaction'
+import Avis                  from './pages/Public/Avis'
+import ExportsComptables     from './pages/Finance/ExportsComptables'
+
+// Espace client externe : chargé à la demande, jamais inclus dans le bundle du personnel.
+// Authentification propre (jeton du portail), indépendante de useAuthStore.
+const portail = (nom) => lazy(() => import('./portail/routes').then((m) => ({ default: m[nom] })))
+const PortailConnexion   = portail('Connexion')
+const PortailProfil      = portail('Profil')
+const PortailDossier     = portail('Dossier')
+const PortailVoyageurs   = portail('Voyageurs')
+const PortailConfirmation= portail('Confirmation')
+const PortailCarnet      = portail('Carnet')
+const PortailPayRetour   = portail('PaiementRetour')
+const PortailPaySimu     = portail('PaiementSimulation')
+// Plateforme « Espace voyageurs » : accueil public + demande de devis
+const PortailEntree      = lazy(() => import('./portail/Accueil').then((m) => ({ default: m.EntreePortail })))
+const PortailDemandeDevis= lazy(() => import('./portail/DemandeDevis'))
+const RequirePortail     = portail('RequirePortail')
+const P = (el, protege = true) => (
+  <Suspense fallback={null}>{protege ? <RequirePortail>{el}</RequirePortail> : el}</Suspense>
+)
+
 function RequireAuth({ children, depts }) {
   const { user } = useAuthStore()
   const location = useLocation()
   if (!user) return <Navigate to="/login" state={{ from: location }} replace />
   if (depts?.length && !depts.includes(user.dept)) return <Navigate to="/dashboard" replace />
   return children
+}
+// Ancienne adresse du formulaire : renvoie vers l'espace voyageurs (en gardant ?circuit=…)
+function VersDemandeDevis() {
+  const { search } = useLocation()
+  return <Navigate to={`/portail/demande-devis${search}`} replace />
 }
 function RequireGuest({ children }) {
   const { user } = useAuthStore()
@@ -115,6 +148,8 @@ export default function App() {
       element={<RequireAuth depts={FINANCE}><DossierVenteFinance /></RequireAuth>} />
       <Route path="/finance/dossier-booking"
       element={<RequireAuth depts={FINANCE}><DossierBookingFinance /></RequireAuth>} />
+      <Route path="/finance/exports"
+      element={<RequireAuth depts={['Finance','Administration','Superviseur']}><ExportsComptables /></RequireAuth>} />
     
       {/* Administration */}
       <Route path="/admin"               element={<RequireAuth depts={ADMIN}><AdminDashboard /></RequireAuth>} />
@@ -129,6 +164,32 @@ export default function App() {
       <Route path="/superviseur/update"  element={<RequireAuth depts={SUPER}><SuperviseurUpdate /></RequireAuth>} />
       <Route path="/superviseur/delete"  element={<RequireAuth depts={SUPER}><SuperviseurDelete /></RequireAuth>} />
       <Route path="/superviseur/stats"   element={<RequireAuth depts={SUPER}><SuperviseurStats /></RequireAuth>} />
+
+      {/* Client & Communication (personnel) */}
+      <Route path="/relation-client" element={<RequireAuth depts={['Sales','Booking','Finance','Administration','Superviseur']}><RelationClient /></RequireAuth>} />
+      <Route path="/prestataires"    element={<RequireAuth depts={['Sales','Booking','Finance','Administration','Superviseur']}><Prestataires /></RequireAuth>} />
+      <Route path="/planning"        element={<RequireAuth depts={['Sales','Booking','Finance','Administration','Superviseur']}><Planning /></RequireAuth>} />
+      <Route path="/prospects"       element={<RequireAuth depts={['Sales','Administration','Superviseur']}><Prospects /></RequireAuth>} />
+      <Route path="/satisfaction"    element={<RequireAuth depts={['Sales','Booking','Finance','Administration','Superviseur']}><Satisfaction /></RequireAuth>} />
+
+      {/* Ancienne adresse du formulaire de demande de devis → espace voyageurs */}
+      <Route path="/demande-devis"   element={<VersDemandeDevis />} />
+      {/* Questionnaire de satisfaction (lien personnel reçu après le voyage) */}
+      <Route path="/avis/:jeton"     element={<Avis />} />
+
+      {/* Espace voyageurs (clients) : accueil public, demande de devis, puis espace connecté */}
+      <Route path="/confirmer/:jeton"                element={P(<PortailConfirmation />, false)} />
+      <Route path="/portail/connexion"               element={P(<PortailConnexion />, false)} />
+      <Route path="/portail/paiement/retour/:uuid"   element={P(<PortailPayRetour />, false)} />
+      <Route path="/portail/paiement/simulation/:uuid" element={P(<PortailPaySimu />, false)} />
+      <Route path="/portail"                         element={P(<PortailEntree />, false)} />
+      <Route path="/portail/demande-devis"           element={P(<PortailDemandeDevis />, false)} />
+      <Route path="/portail/profil"                  element={P(<PortailProfil />)} />
+      <Route path="/portail/dossiers/:id"            element={P(<PortailDossier />)} />
+      <Route path="/portail/dossiers/:id/voyageurs"  element={P(<PortailVoyageurs />)} />
+      <Route path="/portail/dossiers/:id/carnet"     element={P(<PortailCarnet />)} />
+      <Route path="/portail/confirmer/:uuid"         element={P(<PortailConfirmation />)} />
+      <Route path="/portail/*"                       element={<Navigate to="/portail" replace />} />
 
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

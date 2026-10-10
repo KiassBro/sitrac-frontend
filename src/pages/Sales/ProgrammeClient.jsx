@@ -1,15 +1,17 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { Car, Plus, Pencil, Trash2, Info } from 'lucide-react'
+import { Car, Plus, Pencil, Trash2, Info, Ban } from 'lucide-react'
 import { useConfirm } from '../../hooks/useConfirm'
 import { useProgrammeClients, usePCMutations, useClients, useProgrammes } from '../../hooks/useApi'
 import Layout from '../../components/Layout/Layout'
+import AnnulationDossier from '../../components/Dossiers/AnnulationDossier'
 import { Modal, StatCard, Pagination, SearchInput, Badge, Alert } from '../../components/UI/index.jsx'
 import { ApiState } from '../../components/UI/ApiLoader.jsx'
 import { fmtDate } from '../../utils/storage'
 
 export default function ProgrammeClient() {
-  const { data: pcs     = [], isLoading, error, refetch } = useProgrammeClients()
+  // RG 34 : cette page affiche aussi les dossiers annulés (badge « Annulé »)
+  const { data: pcs     = [], isLoading, error, refetch } = useProgrammeClients('', { inclureAnnules: true })
   const { data: clients = [] } = useClients()
   const { data: progs   = [] } = useProgrammes()
   const { create, update, remove } = usePCMutations()
@@ -21,6 +23,7 @@ export default function ProgrammeClient() {
   const [editItem, setEditItem] = useState(null)
   // Info du programme sélectionné pour affichage
   const [selectedProg, setSelectedProg] = useState(null)
+  const [annulPC,  setAnnulPC]  = useState(null)   // dossier ouvert dans la fenêtre d'annulation
   const PER = 8
 
   // ─── React Hook Form avec setValue pour mise à jour du prix ────
@@ -32,7 +35,8 @@ export default function ProgrammeClient() {
     (p.programme_nom||'').toLowerCase().includes(search.toLowerCase())
   )
   const paginated = filtered.slice((page-1)*PER, page*PER)
-  const totalCA   = pcs.reduce((s,p) => s + (+p.prix_vente||0) * (p.nb_pax||1), 0)
+  const actifs    = pcs.filter(p => !p.annule)
+  const totalCA   = actifs.reduce((s,p) => s + (+p.prix_vente||0) * (p.nb_pax||1), 0)
 
   const openAdd = () => {
     setEditItem(null)
@@ -97,10 +101,10 @@ export default function ProgrammeClient() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard icon={Car} value={pcs.length}                                  label="Dossiers"       color="orange"/>
-        <StatCard icon={Car} value={pcs.reduce((s,p)=>s+(p.nb_pax||1),0)}        label="Total PAX"      color="green"/>
+        <StatCard icon={Car} value={actifs.length}                               label="Dossiers actifs" color="orange"/>
+        <StatCard icon={Car} value={actifs.reduce((s,p)=>s+(p.nb_pax||1),0)}     label="Total PAX"      color="green"/>
         <StatCard icon={Car} value={`${totalCA.toLocaleString('fr-FR')} €`}       label="CA total"       color="blue"/>
-        <StatCard icon={Car} value={pcs.filter(p=>p.a_cotation).length}           label="Avec cotation"  color="purple"/>
+        <StatCard icon={Ban} value={pcs.length - actifs.length}                  label="Dossiers annulés" color="red"/>
       </div>
 
       {/* Table */}
@@ -129,8 +133,11 @@ export default function ProgrammeClient() {
                 {paginated.length === 0 ? (
                   <tr><td colSpan={8} className="py-10 text-center text-gray-400">Aucun dossier</td></tr>
                 ) : paginated.map(p => (
-                  <tr key={p.id}>
-                    <td><strong className="text-gray-900 dark:text-white">{p.client_nom}</strong></td>
+                  <tr key={p.id} className={p.annule ? 'opacity-60' : ''}>
+                    <td>
+                      <strong className="text-gray-900 dark:text-white">{p.client_nom}</strong>
+                      {p.annule && <span className="ml-2"><Badge variant="inactive">Annulé</Badge></span>}
+                    </td>
                     <td><Badge variant="info">{p.programme_nom}</Badge></td>
                     <td>{p.nb_pax}</td>
                     <td><strong>{(+p.prix_vente).toLocaleString('fr-FR')} €</strong></td>
@@ -138,7 +145,12 @@ export default function ProgrammeClient() {
                     <td className="text-xs text-gray-400">{fmtDate(p.date_debut)} → {fmtDate(p.date_fin)}</td>
                     <td>{p.a_cotation ? <Badge variant="active">Oui</Badge> : <Badge variant="inactive">Non</Badge>}</td>
                     <td className="text-center">
-                      <button className="btn btn-ghost btn-xs mr-1.5" onClick={() => openEdit(p)}><Pencil size={12}/></button>
+                      <button className="btn btn-ghost btn-xs mr-1.5" disabled={p.annule} onClick={() => openEdit(p)}
+                        title={p.annule ? 'Dossier annulé — non modifiable (RG 34)' : 'Modifier'}><Pencil size={12}/></button>
+                      <button className="btn btn-ghost btn-xs mr-1.5" onClick={() => setAnnulPC(p)}
+                        title={p.annule ? "Voir l'annulation" : 'Annuler le dossier (RG 34)'}>
+                        <Ban size={12} className={p.annule ? 'text-brand-red' : ''}/>
+                      </button>
                       <button className="btn btn-danger btn-xs" onClick={() =>
                         confirmDelete(`dossier de ${p.client_nom}`, () => remove.mutate(p.id))}>
                         <Trash2 size={12}/>
@@ -152,6 +164,9 @@ export default function ProgrammeClient() {
           <Pagination page={page} total={filtered.length} perPage={PER} onChange={setPage}/>
         </ApiState>
       </div>
+
+      {/* RG 34 : annulation / réactivation du dossier */}
+      <AnnulationDossier pc={annulPC} open={!!annulPC} onClose={() => setAnnulPC(null)}/>
 
       {/* Modal */}
       <Modal

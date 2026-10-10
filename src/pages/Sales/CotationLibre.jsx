@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { Calculator, Plus, Pencil, Trash2, Save, ArrowLeft, Printer } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { salesAPI } from '../../utils/api'
+import { tauxAPI } from '../../utils/tauxApi'
 import { useProgrammes } from '../../hooks/useApi'
 import { useConfirm } from '../../hooks/useConfirm'
 import toast from 'react-hot-toast'
@@ -37,6 +38,12 @@ function FormCotation({ initial, onSave, onCancel, isSaving }) {
   const [editIdx, setEditIdx] = useState(null)
 
   const { register, handleSubmit, reset } = useForm()
+
+  // RG 35 : une nouvelle cotation libre part du taux de référence du jour (mis à jour automatiquement)
+  const { data: tauxRef } = useQuery({ queryKey: ['taux-actuel'], queryFn: tauxAPI.actuel, enabled: !initial?.id })
+  useEffect(() => {
+    if (!initial?.id && tauxRef?.taux && +taux === 4800) setTaux(+tauxRef.taux)
+  }, [tauxRef]) // eslint-disable-line
 
   const tot1 = lignes.reduce((s, l) =>
     s + (+l.dbl||0) + (+l.bf||0) + (+l.lunch||0) + (+l.diner||0) +

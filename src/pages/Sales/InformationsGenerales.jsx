@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react'
-import { useForm } from 'react-hook-form'
+import { useState, useRef, useMemo } from 'react'
+import { useForm, Controller } from 'react-hook-form'
 import { User, Plus, Pencil, Trash2, Users, FileText, Printer } from 'lucide-react'
 import { useClients, useClientMutations } from '../../hooks/useApi'
 import { salesAPI } from '../../utils/api'
@@ -10,11 +10,12 @@ import { Modal, StatCard, Pagination, SearchInput, Badge, Alert } from '../../co
 import { ApiState } from '../../components/UI/ApiLoader.jsx'
 import { fmtDate } from '../../utils/storage'
 import GIPrintModal from '../../components/PDF/GIPrintModal'
+import ChampPays from '../../components/UI/ChampPays'
+import ChampTelephone from '../../components/UI/ChampTelephone'
+import { usePays } from '../../utils/referentielsApi'
 
 const TITRES = ['Monsieur', 'Madame', 'Mademoiselle']
 const TYPES  = ['Individuel', 'Mini-groupe', 'Groupe', 'Famille']
-const NATIOS = ['Française','Malgache','Belge','Allemande','Américaine',
-                'Italienne','Anglaise','Espagnole','Autre']
 const TABS = [
   { key: 'civil',    label: 'État Civil'  },
   { key: 'vol',      label: 'Vols'        },
@@ -89,7 +90,17 @@ export default function InformationsGenerales() {
     onChange: e => setF(field, e.target.value),
   })
 
-  const { register: regP, handleSubmit: subP, reset: resetP } = useForm()
+  const { register: regP, handleSubmit: subP, reset: resetP, control: ctrlP } = useForm()
+
+  // Référentiel pays : l'indicatif téléphonique suit le pays de résidence, sinon la nationalité
+  const referentiel = usePays()
+  const codeTel = (paysNom, nationalite) =>
+    referentiel.depuisPays(paysNom)?.code || referentiel.depuisNationalite(nationalite)?.code || 'MG'
+
+  // Filtre : nationalités réellement présentes parmi les clients
+  const natios = useMemo(
+    () => [...new Set(clients.map(c => c.nationalite).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'fr')),
+    [clients])
 
   const filtered  = clients.filter(c =>
     (!search || c.nom.toLowerCase().includes(search.toLowerCase())) &&
@@ -154,6 +165,10 @@ export default function InformationsGenerales() {
     if (!fd.nom.trim())         { toast.error('Le nom est obligatoire');         return }
     if (!fd.nationalite.trim()) { toast.error('La nationalité est obligatoire'); return }
     const payload = { ...fd, nb_pax: +fd.nb_pax || 1 }
+    // Une date laissée vide doit partir à null (le serveur refuse une chaîne vide)
+    for (const champ of ['date_naissance', 'vol_arr_date', 'vol_dep_date']) {
+      if (!payload[champ]) payload[champ] = null
+    }
     const doSave  = () => {
       const opts = { onSuccess: () => { setLeaderModal(false); refetch() } }
       if (editLeader) update.mutate({ id: editLeader.id, data: payload }, opts)
@@ -209,6 +224,7 @@ export default function InformationsGenerales() {
   }
 
   const savePax = (data) => {
+    if (!data.date_naissance) data = { ...data, date_naissance: null }
     addPax.mutate({ clientId: curLeaderId, data }, {
       onSuccess: () => {
         setPaxModal(false)
@@ -263,7 +279,7 @@ export default function InformationsGenerales() {
             <select className="form-control py-2 text-sm" value={fNat}
               onChange={e => { setFNat(e.target.value); setPage(1) }}>
               <option value="">Toutes nationalités</option>
-              {NATIOS.map(n => <option key={n}>{n}</option>)}
+              {natios.map(n => <option key={n}>{n}</option>)}
             </select>
             <select className="form-control py-2 text-sm" value={fType}
               onChange={e => { setFType(e.target.value); setPage(1) }}>
@@ -420,8 +436,8 @@ export default function InformationsGenerales() {
                 <label className="form-label">
                   Nationalité <span className="form-req">*</span>
                 </label>
-                <input className="form-control" placeholder="Ex: Française"
-                  {...inp('nationalite')}/>
+                <ChampPays mode="nationalite" value={fd.nationalite}
+                  onChange={v => setF('nationalite', v)} effacable={false}/>
               </div>
               <div className="form-group">
                 <label className="form-label">Date de naissance</label>
@@ -449,7 +465,8 @@ export default function InformationsGenerales() {
             </div>
             <div className="form-group">
               <label className="form-label">Pays</label>
-              <input className="form-control" placeholder="Pays" {...inp('pays')}/>
+              <ChampPays mode="pays" value={fd.pays} onChange={v => setF('pays', v)}
+                placeholder="Pays de résidence"/>
             </div>
           </div>
         )}
@@ -515,8 +532,8 @@ export default function InformationsGenerales() {
             <div className="grid grid-cols-2 gap-4">
               <div className="form-group">
                 <label className="form-label">Téléphone</label>
-                <input className="form-control" placeholder="+261..."
-                  {...inp('telephone')}/>
+                <ChampTelephone value={fd.telephone} onChange={v => setF('telephone', v)}
+                  paysDefaut={codeTel(fd.pays, fd.nationalite)}/>
               </div>
               <div className="form-group">
                 <label className="form-label">Email</label>
@@ -540,8 +557,8 @@ export default function InformationsGenerales() {
               </div>
               <div className="form-group">
                 <label className="form-label">Contact Urgence (Tél)</label>
-                <input className="form-control" placeholder="+261..."
-                  {...inp('urgence_tel')}/>
+                <ChampTelephone value={fd.urgence_tel} onChange={v => setF('urgence_tel', v)}
+                  paysDefaut={codeTel(fd.pays, fd.nationalite)}/>
               </div>
             </div>
             <div className="form-group">
@@ -687,7 +704,7 @@ export default function InformationsGenerales() {
           <button className="btn btn-ghost" onClick={() => setPaxModal(false)}>
             Annuler
           </button>
-          <button className="btn btn-success" onClick={subP(savePax)}
+          <button className="btn btn-success" onClick={subP(savePax, () => toast.error('Le nom et la nationalité sont obligatoires'))}
             disabled={addPax.isPending}>
             {addPax.isPending ? 'Enregistrement...' : 'Enregistrer'}
           </button>
@@ -708,8 +725,11 @@ export default function InformationsGenerales() {
             <label className="form-label">
               Nationalité <span className="form-req">*</span>
             </label>
-            <input className="form-control"
-              {...regP('nationalite', { required: true })}/>
+            <Controller name="nationalite" control={ctrlP} rules={{ required: true }}
+              render={({ field }) => (
+                <ChampPays mode="nationalite" value={field.value} onChange={v => field.onChange(v)}
+                  effacable={false}/>
+              )}/>
           </div>
           <div className="form-group">
             <label className="form-label">Date de naissance</label>
@@ -721,7 +741,11 @@ export default function InformationsGenerales() {
           </div>
           <div className="form-group">
             <label className="form-label">Téléphone</label>
-            <input className="form-control" {...regP('telephone')}/>
+            <Controller name="telephone" control={ctrlP}
+              render={({ field }) => (
+                <ChampTelephone value={field.value} onChange={v => field.onChange(v)}
+                  paysDefaut={codeTel(curLeaderFull?.pays, curLeaderFull?.nationalite)}/>
+              )}/>
           </div>
         </div>
         <div className="form-group">
@@ -737,4 +761,4 @@ export default function InformationsGenerales() {
       </Modal>
     </Layout>
   )
-}
+}

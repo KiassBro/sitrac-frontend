@@ -1,12 +1,15 @@
 import { useState, useRef } from 'react'
 import { useForm } from 'react-hook-form'
-import { ClipboardList, Plus, Pencil, Trash2, ArrowLeft, Save, AlertCircle, Download, Upload } from 'lucide-react'
+import { ClipboardList, Plus, Pencil, Trash2, ArrowLeft, Save, AlertCircle, Download, Upload, Ticket, BookOpenText } from 'lucide-react'
 import { useProgrammeClients } from '../../hooks/useApi'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { bookingAPI } from '../../utils/api'
+import { bookingAPI, downloadFile } from '../../utils/api'
 import { useConfirm } from '../../hooks/useConfirm'
 import toast from 'react-hot-toast'
 import Layout from '../../components/Layout/Layout'
+import ChampPrestataire from '../../components/Prestataires/ChampPrestataire'
+import VouchersDossier from '../../components/Vouchers/VouchersDossier'
+import ChampRessource from '../../components/Ressources/ChampRessource'
 import { Modal, Badge, SearchInput, StatCard, Alert } from '../../components/UI/index.jsx'
 import { ApiState } from '../../components/UI/ApiLoader.jsx'
 import { fmtDate, today } from '../../utils/storage'
@@ -23,6 +26,7 @@ function BrieffingForm({ pc, onBack }) {
   const [lignes,  setLignes]  = useState([])
   const [inited,  setInited]  = useState(false)
   const [csvBusy, setCsvBusy] = useState(false)
+  const [vouchersOpen, setVouchersOpen] = useState(false)
   const fileInputRef = useRef(null)
 
   const { register: regForm, handleSubmit: subForm, reset: resetForm,
@@ -112,6 +116,20 @@ function BrieffingForm({ pc, onBack }) {
       <div className="flex items-center gap-3 mb-5">
         <button className="btn btn-ghost btn-sm" onClick={onBack}><ArrowLeft size={14}/> Retour</button>
         <h1 className="page-title text-xl"><ClipboardList size={20} className="text-orange"/> Brieffing — {pc.client_nom}</h1>
+        {/* Carnet de route du voyageur (PDF, sans prix) : FR pour le guide, EN/FR pour le client */}
+        <div className="ml-auto flex gap-2">
+          {['fr','en'].map(l => (
+            <button key={l} className="btn btn-ghost btn-sm" disabled={!brf}
+              title={!brf ? "Enregistrez d'abord le brieffing" : `Carnet de route en ${l === 'fr' ? 'français' : 'anglais'} (PDF)`}
+              onClick={() => downloadFile(`/carnet/dossiers/${pc.id}/pdf/?langue=${l}`, `carnet-de-route-PC${pc.id}-${l}.pdf`).catch(e => toast.error(e.message))}>
+              <BookOpenText size={14}/> Carnet {l.toUpperCase()}
+            </button>
+          ))}
+        </div>
+        <button className="btn btn-ghost btn-sm" disabled={!brf} onClick={()=>setVouchersOpen(true)}
+          title={!brf ? "Enregistrez d'abord le brieffing" : 'Générer et envoyer les vouchers aux prestataires'}>
+          <Ticket size={14}/> Vouchers
+        </button>
       </div>
 
       {isLoading && <div className="text-center py-8 text-gray-400">Chargement du brieffing...</div>}
@@ -135,9 +153,13 @@ function BrieffingForm({ pc, onBack }) {
             <div className="card-header"><h3 className="font-title font-bold text-sm text-gray-800 dark:text-gray-200">Informations Booking</h3></div>
             <div className="card-body">
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="form-group"><label className="form-label">Chauffeur</label><input className="form-control" {...formMethods.register('chauffeur')}/></div>
-                <div className="form-group"><label className="form-label">Guide</label><input className="form-control" {...formMethods.register('guide')}/></div>
-                <div className="form-group"><label className="form-label">Voiture</label><input className="form-control" {...formMethods.register('voiture')}/></div>
+                {/* Planning des ressources : propose les fiches et signale les doubles affectations */}
+                <div className="form-group"><label className="form-label">Chauffeur</label>
+                  <ChampRessource form={formMethods} name="chauffeur" type="chauffeur" debut={pc.date_debut} fin={pc.date_fin} exclurePc={pc.id} placeholder="Choisir ou saisir"/></div>
+                <div className="form-group"><label className="form-label">Guide</label>
+                  <ChampRessource form={formMethods} name="guide" type="guide" debut={pc.date_debut} fin={pc.date_fin} exclurePc={pc.id} placeholder="Choisir ou saisir"/></div>
+                <div className="form-group"><label className="form-label">Voiture</label>
+                  <ChampRessource form={formMethods} name="voiture" type="vehicule" debut={pc.date_debut} fin={pc.date_fin} exclurePc={pc.id} placeholder="Choisir ou saisir"/></div>
                 <div className="form-group"><label className="form-label">Responsable Finance</label><input className="form-control" {...formMethods.register('responsable_finance')}/></div>
                 <div className="form-group"><label className="form-label">Date du programme</label><input type="date" className="form-control" {...formMethods.register('date_programme')}/></div>
               </div>
@@ -208,13 +230,16 @@ function BrieffingForm({ pc, onBack }) {
         </>
       )}
 
+      {/* Vouchers prestataires */}
+      <VouchersDossier pc={pc} open={vouchersOpen} onClose={()=>setVouchersOpen(false)}/>
+
       {/* Modal ligne */}
       <Modal open={lgModal} onClose={()=>setLgModal(false)} title={editIdx!==null?'Modifier':'Ajouter un prestataire'} icon={ClipboardList} size="lg"
         footer={<><button className="btn btn-ghost" onClick={()=>setLgModal(false)}>Annuler</button><button className="btn btn-success" onClick={saveLg}>Enregistrer</button></>}>
         <div className="grid grid-cols-2 gap-4">
           <div className="form-group"><label className="form-label">Date</label><input type="date" className="form-control" {...lgMethods.register('date')}/></div>
           <div className="form-group"><label className="form-label">Itinéraire</label><input className="form-control" {...lgMethods.register('itineraire')}/></div>
-          <div className="form-group col-span-2"><label className="form-label">Prestataire <span className="form-req">*</span></label><input className="form-control" {...lgMethods.register('prestataire',{required:true})}/></div>
+          <div className="form-group col-span-2"><label className="form-label">Prestataire <span className="form-req">*</span></label><ChampPrestataire form={lgMethods} name="prestataire" champMontant="tarif_paiement" required/></div>
           <div className="form-group"><label className="form-label">État</label>
             <select className="form-control" {...lgMethods.register('etat')}>
               {ETATS.map(e=><option key={e} value={e}>{ETAT_LABEL[e]}</option>)}

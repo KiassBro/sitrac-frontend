@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { Settings, Plus, Pencil, Save, TrendingUp } from 'lucide-react'
+import { Settings, Plus, Pencil, Save, TrendingUp, RefreshCw, Globe } from 'lucide-react'
 import { useConstantes } from '../../hooks/useApi'
 import { superviseurAPI } from '../../utils/api'
+import { tauxAPI } from '../../utils/tauxApi'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useConfirm } from '../../hooks/useConfirm'
 import toast from 'react-hot-toast'
@@ -65,6 +66,19 @@ export default function Constantes() {
     onError: e => toast.error(e.message),
   })
   const openAddTaux = () => { tauxForm.reset({ taux:'', date_effet:'', observation:'' }); setTauxModal(true) }
+
+  // Taux de référence en vigueur + récupération automatique du taux du jour (marché EUR/MGA)
+  const { data: tauxActuel, refetch: refetchActuel } = useQuery({ queryKey: ['taux-actuel'], queryFn: tauxAPI.actuel })
+  const actualiser = useMutation({
+    mutationFn: (forcer) => tauxAPI.actualiser(forcer),
+    onSuccess: (r) => {
+      if (r.statut === 'inchange') toast(r.detail, { icon: 'ℹ️' })
+      else if (r.alerte) toast(`${r.detail} — variation importante, à vérifier`, { icon: '⚠️', duration: 6000 })
+      else toast.success(r.detail)
+      qc.invalidateQueries(['taux-change-historique']); qc.invalidateQueries(['constantes']); refetchActuel()
+    },
+    onError: e => toast.error(e.message),
+  })
   const onSubmitTaux = (data) => confirmSave(() => tauxMut.mutate({ ...data, taux: +data.taux }))
 
   return (
@@ -122,8 +136,27 @@ export default function Constantes() {
           <h3 className="font-title font-bold text-sm text-gray-800 dark:text-gray-200 flex items-center gap-2">
             <TrendingUp size={14} className="text-orange"/> Historique des taux de change
           </h3>
-          <button className="btn btn-primary btn-sm" onClick={openAddTaux}><Plus size={13}/> Nouveau taux</button>
+          <div className="flex gap-2">
+            <button className="btn btn-ghost btn-sm" disabled={actualiser.isPending}
+              title="Récupère le taux EUR → MGA du jour sur Internet (fait aussi automatiquement chaque matin)"
+              onClick={() => actualiser.mutate(false)}>
+              <RefreshCw size={13} className={actualiser.isPending ? 'animate-spin' : ''}/> Taux du jour (Internet)
+            </button>
+            <button className="btn btn-primary btn-sm" onClick={openAddTaux}><Plus size={13}/> Nouveau taux</button>
+          </div>
         </div>
+        {tauxActuel?.taux && (
+          <div className="px-5 py-3 border-b border-gray-100 dark:border-gray-800 flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
+            <span>Taux de référence en vigueur : <strong className="text-brand-green text-base">{(+tauxActuel.taux).toLocaleString('fr-FR')} Ar/€</strong></span>
+            {tauxActuel.date_effet && <span className="text-gray-500">depuis le {fmtDate(tauxActuel.date_effet)}</span>}
+            <span className="text-xs text-gray-400 flex items-center gap-1">
+              {tauxActuel.automatique ? <><Globe size={11}/> {tauxActuel.observation}</> : `Saisi manuellement${tauxActuel.defini_par ? ` par ${tauxActuel.defini_par}` : ''}`}
+            </span>
+            <button className="text-xs text-orange hover:underline ml-auto" disabled={actualiser.isPending}
+              title="Remplace le taux déjà enregistré aujourd'hui par celui du marché"
+              onClick={() => actualiser.mutate(true)}>Remplacer par le taux du marché</button>
+          </div>
+        )}
         <ApiState isLoading={tauxLoading} onRetry={refetchTaux} loadingText="Chargement...">
           <div className="overflow-x-auto">
             <table className="tbl text-sm">

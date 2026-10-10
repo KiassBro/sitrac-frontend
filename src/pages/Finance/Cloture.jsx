@@ -7,6 +7,7 @@ import { financeAPI } from '../../utils/api'
 import { useConfirm } from '../../hooks/useConfirm'
 import toast from 'react-hot-toast'
 import Layout from '../../components/Layout/Layout'
+import ChampPrestataire from '../../components/Prestataires/ChampPrestataire'
 import { Modal, Badge, SearchInput, StatCard } from '../../components/UI/index.jsx'
 import { ApiState } from '../../components/UI/ApiLoader.jsx'
 import { fmtDate, fmt, today } from '../../utils/storage'
@@ -666,9 +667,7 @@ function ClotureForm({ pc, onBack }) {
           </div>
           <div className="form-group">
             <label className="form-label">Prestataire</label>
-            <input className="form-control"
-              placeholder="Nom du prestataire"
-              {...lgMethods.register('prestataire')}/>
+            <ChampPrestataire form={lgMethods} name="prestataire" champMontant="montant"/>
           </div>
           <div className="form-group">
             <label className="form-label">

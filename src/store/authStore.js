@@ -17,6 +17,29 @@ const DEPT_REDIRECTS = {
   Superviseur:    '/superviseur',
 }
 
+// Connexion par fetch simple : apiFetch traite un 401 comme une session expirée et recharge
+// la page /login, ce qui effaçait le message « identifiants incorrects ».
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
+async function demanderConnexion(login, password) {
+  let res
+  try {
+    res = await fetch(`${BASE_URL}/auth/login/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ login, password }),
+    })
+  } catch {
+    throw new Error('Serveur injoignable. Vérifiez votre connexion.')
+  }
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(res.status === 401
+      ? 'Login ou mot de passe incorrect.'
+      : (data.detail || Object.values(data).flat().join(' ') || `Erreur HTTP ${res.status}`))
+  }
+  return data
+}
+
 function getUserFromStorage() {
   try { return JSON.parse(localStorage.getItem('sitrac_user')) } catch { return null }
 }
@@ -34,7 +57,7 @@ export const useAuthStore = create((set, get) => ({
   login: async (loginVal, password) => {
     set({ loading: true })
     try {
-      const data = await authAPI.login(loginVal.trim().toLowerCase(), password)
+      const data = await demanderConnexion(loginVal.trim().toLowerCase(), password)
 
       const user = {
         id:         data.user.id,
