@@ -40,6 +40,7 @@ import Utilisateurs          from './pages/Admin/Utilisateurs'
 import Constantes            from './pages/Admin/Constantes'
 import Historique            from './pages/Admin/Historique'
 import Statistiques          from './pages/Admin/Statistiques'
+import Portefeuilles         from './pages/Admin/Portefeuilles'
 
 // Superviseur
 import Journal               from './pages/Superviseur/Journal'
@@ -157,6 +158,7 @@ export default function App() {
       <Route path="/admin/constantes"    element={<RequireAuth depts={ADMIN}><Constantes /></RequireAuth>} />
       <Route path="/admin/historique"    element={<RequireAuth depts={ADMIN}><Historique /></RequireAuth>} />
       <Route path="/admin/statistiques"  element={<RequireAuth depts={ADMIN}><Statistiques /></RequireAuth>} />
+      <Route path="/admin/portefeuilles" element={<RequireAuth depts={ADMIN}><Portefeuilles /></RequireAuth>} />
 
       {/* Superviseur */}
       <Route path="/superviseur"         element={<RequireAuth depts={SUPER}><Journal /></RequireAuth>} />

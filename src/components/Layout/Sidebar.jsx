@@ -7,7 +7,8 @@ import {
   Users, Car, BarChart2, ClipboardList, Package, FileCheck,
   CreditCard, FolderOpen, Receipt, Shield, Settings,
   History, Database, PlusCircle, Edit, Trash2,
-  LogOut, ChevronLeft, ChevronRight, Folder, Bot, Handshake, Building2, CalendarRange, Inbox, Star, FileSpreadsheet
+  LogOut, ChevronLeft, ChevronRight, Folder, Bot, Handshake, Building2, CalendarRange, Inbox, Star, FileSpreadsheet,
+  Briefcase
 } from 'lucide-react'
 
 // Référentiel des prestataires (hôtels, transporteurs, guides, parcs…)
@@ -94,6 +95,8 @@ const DEPT_LINKS = {
     { section: 'Administration' },
     { to:'/admin',                 icon:Shield,          label:'Tableau de bord Admin' },
     { to:'/admin/utilisateurs',    icon:Settings,        label:'Utilisateurs'          },
+    // RG 29 : répartition et réattribution des clients entre commerciaux
+    { to:'/admin/portefeuilles',   icon:Briefcase,       label:'Portefeuilles commerciaux' },
     { to:'/admin/constantes',      icon:Settings,        label:'Constantes'            },
     { to:'/admin/historique',      icon:History,         label:'Historiques Sessions'  },
     { to:'/admin/statistiques',    icon:BarChart2,       label:'Statistiques'          },
@@ -119,11 +122,13 @@ export default function Sidebar() {
   const { showConfirm } = useUiStore()
   const navigate = useNavigate()
 
-  if (!user) return null
-
+  // Les hooks sont appelés avant tout « return » (règle des hooks React) :
+  // sinon React plante à la déconnexion, quand `user` passe à null.
   const { data: pcs   = [] } = useProgrammeClients()
   const { data: dests = [] } = useDestinations()
   const { data: progs = [] } = useProgrammes()
+
+  if (!user) return null
 
   const notifCount = (() => {
     let count = 0

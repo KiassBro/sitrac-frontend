@@ -26,7 +26,8 @@ const EVT = {
 }
 const ECH = { payee: ['Payée', 'badge-active'], en_retard: ['En retard', 'badge-inactive'], partielle: ['Partielle', 'badge-pending'], a_payer: ['À payer', 'badge-info'] }
 const TX = { payee: 'badge-active', en_attente: 'badge-pending', creee: 'badge-pending', echouee: 'badge-inactive', annulee: 'badge-inactive', expiree: 'badge-inactive' }
-const MSG = { envoye: 'badge-info', delivre: 'badge-active', planifie: 'badge-pending', echec: 'badge-inactive', ignore: 'bg-gray-100 text-gray-500' }
+const MSG = { envoye: 'badge-info', delivre: 'badge-active', planifie: 'badge-pending', en_file: 'badge-pending', echec: 'badge-inactive', ignore: 'bg-gray-100 text-gray-500' }
+const MSG_LIBELLE = { envoye: 'Envoyé', delivre: 'Délivré', planifie: 'Planifié', en_file: "En cours d'envoi", echec: 'Échec', ignore: 'Ignoré' }
 const TYPES_DOC = [['programme_final', 'Programme final'], ['voucher', 'Voucher'], ['billet', 'Billet / e-ticket'],
   ['conditions', 'Conditions de vente'], ['assurance', 'Assurance'], ['autre', 'Autre']]
 
@@ -52,7 +53,11 @@ export default function RelationClient() {
   const pcId = params.get('pc')
 
   const liste = useQuery({ queryKey: ['rc-dossiers', recherche], queryFn: () => relationClientAPI.getDossiers(recherche) })
-  const synthese = useQuery({ queryKey: ['rc-synthese', pcId], queryFn: () => relationClientAPI.getSynthese(pcId), enabled: !!pcId })
+  const synthese = useQuery({
+    queryKey: ['rc-synthese', pcId], queryFn: () => relationClientAPI.getSynthese(pcId), enabled: !!pcId,
+    // Emails partis en arrière-plan : on actualise toutes les 3 s jusqu'à « Envoyé » ou « Échec »
+    refetchInterval: (q) => ((q?.state?.data ?? q)?.messages?.some((m) => m.statut === 'en_file') ? 3000 : false),
+  })
 
   return (
     <Layout breadcrumb={['SITRAC', 'Relation client', 'Suivi client & paiements']}>
@@ -519,7 +524,7 @@ function SectionMessages({ s }) {
                     <td><Ico size={14} className="text-gray-500" aria-label={m.canal} /></td>
                     <td className="text-xs">{m.destinataire}</td>
                     <td className="text-xs max-w-md truncate" title={m.corps}>{m.sujet || m.corps}</td>
-                    <td><Badge cls={MSG[m.statut]}>{m.statut}</Badge>
+                    <td><Badge cls={MSG[m.statut]}>{MSG_LIBELLE[m.statut] || m.statut}</Badge>
                       {m.statut === 'planifie' && <div className="text-[11px] text-gray-400">heure locale du client : {fmtDH(m.planifie_pour)}</div>}
                       {m.erreur && <div className="text-[11px] text-brand-red max-w-xs">{m.erreur}</div>}
                     </td>
