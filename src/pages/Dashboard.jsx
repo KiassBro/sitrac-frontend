@@ -73,7 +73,7 @@ function FinanceKPIs({ pcs, paiements, clotures }) {
 
       {/* KPIs principaux */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-        <StatCard icon={TrendingUp}  value={fmt(totalCA)}      label="CA Total (€)"         color="orange"/>
+        <StatCard icon={TrendingUp}  value={fmt(totalCA)}      label="CA prévisionnel (€)"         color="orange"/>
         <StatCard icon={CreditCard}  value={fmt(totalPaye)}    label="Total Encaissé (€)"   color="green"/>
         <StatCard icon={FileText}    value={`${tauxRecouvr}%`} label="Taux Recouvrement"    color="blue"/>
         <StatCard icon={FolderOpen}  value={fmt(beneficeNet)}  label="Bénéfice Net (€)"     color="purple"/>
@@ -177,7 +177,7 @@ function FinanceKPIs({ pcs, paiements, clotures }) {
             </svg>
             <div className="space-y-3 flex-1">
               {[
-                ['CA Total',  fmt(totalCA),   'text-gray-700 dark:text-gray-300'],
+                ['CA prévisionnel',  fmt(totalCA),   'text-gray-700 dark:text-gray-300'],
                 ['Encaissé',  fmt(totalPaye), 'text-brand-green'],
                 ['Restant',   fmt(restant),   'text-orange'],
               ].map(([l,v,cls]) => (

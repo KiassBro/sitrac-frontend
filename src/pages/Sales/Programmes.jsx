@@ -116,7 +116,7 @@ export default function Programmes() {
               {['Grand Sud','Nord','Est','Ouest','Côte','Mixte','Spécial','Île'].map(t=><option key={t}>{t}</option>)}
             </select>
           </div>
-          <div className="form-group"><label className="form-label">Prix (€) <span className="form-req">*</span></label><input type="number" className="form-control" step="0.01" {...register('prix',{required:true,min:1})}/></div>
+          <div className="form-group"><label className="form-label">Prix par personne (€) <span className="form-req">*</span></label><input type="number" className="form-control" step="0.01" {...register('prix',{required:true,min:1})}/></div>
           <div className="form-group"><label className="form-label">Description</label><input className="form-control" {...register('description')}/></div>
         </div>
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-sm text-brand-blue mb-4">

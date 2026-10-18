@@ -8,6 +8,7 @@ import { useConfirm } from '../hooks/useConfirm'
 import { timeAgo } from '../utils/storage'
 import Layout from '../components/Layout/Layout'
 import { Badge } from '../components/UI/index.jsx'
+import { authAPI } from '../utils/api'
 
 const DEPT_PERMS = {
   Sales: [
@@ -57,7 +58,7 @@ function strengthScore(pass) {
 }
 
 export default function Profile() {
-  const { user, logout } = useAuthStore()
+  const { user, logout, refreshMe } = useAuthStore()
   const { confirm, confirmSave } = useConfirm()
   const [searchParams] = useSearchParams()
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') === 'password' ? 'password' : 'info')
@@ -76,15 +77,28 @@ export default function Profile() {
 
   useEffect(() => { setPassStr(strengthScore(newPassVal)) }, [newPassVal])
 
+  // Charge le téléphone et l'email réels depuis le serveur
+  useEffect(() => {
+    authAPI.me().then((me) => {
+      const p = { name: me.nom_complet || user.name || '', email: me.email || '', tel: me.telephone || '' }
+      setProfile(p); resetInfo(p)
+    }).catch(() => {})
+  }, [])
+
   const audit = [] // Les activités sont chargées via l'API Superviseur dans une future version
 
   const saveInfo = (data) => {
-    confirmSave(() => {
-      const updated = { name: data.name.trim(), email: data.email.trim(), tel: data.tel.trim() }
-      setProfile(updated)
-      logAction('UPDATE', 'profil', `Mise à jour profil: ${updated.name}`, { login: user.login })
-      setEditMode(false)
-      toast.success('Profil mis à jour')
+    confirmSave(async () => {
+      try {
+        // Enregistrement réel côté serveur (le nom est géré par l'Administration)
+        const me = await authAPI.updateMe({ email: data.email.trim(), telephone: data.tel.trim() })
+        setProfile({ name: profile.name, email: me.email || '', tel: me.telephone || '' })
+        await refreshMe()
+        setEditMode(false)
+        toast.success('Profil mis à jour')
+      } catch (e) {
+        toast.error(e.message || 'Mise à jour impossible')
+      }
     })
   }
 
@@ -181,7 +195,7 @@ export default function Profile() {
               <div className="card-body">
                 {editMode ? (
                   <form onSubmit={handleInfo(saveInfo)}>
-                    <div className="form-group"><label className="form-label">Nom complet <span className="form-req">*</span></label><input className="form-control" {...regInfo('name',{required:true})} /></div>
+                    <div className="form-group"><label className="form-label">Nom complet</label><input className="form-control opacity-60" readOnly {...regInfo('name')} /><p className="form-hint">Modifiable uniquement par l'Administration.</p></div>
                     <div className="form-group"><label className="form-label">Email</label><input type="email" className="form-control" {...regInfo('email')} /></div>
                     <div className="form-group"><label className="form-label">Téléphone</label><input className="form-control" {...regInfo('tel')} /></div>
                     <div className="form-group"><label className="form-label">Login</label><input className="form-control opacity-60" readOnly value={user.login} /></div>

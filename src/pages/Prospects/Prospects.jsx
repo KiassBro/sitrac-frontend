@@ -140,14 +140,14 @@ function FicheProspect({ p, peutModifier, userId, onFermer, onChange }) {
   const [conversion, setConversion] = useState(null)
   const actif = ['nouveau', 'contacte', 'devis_envoye'].includes(p.statut)
 
-  const action = (fn, ok) => useMutation({
+  const useAction = (fn, ok) => useMutation({
     mutationFn: fn, onSuccess: () => { if (ok) toast.success(ok); onChange() }, onError: (e) => toast.error(e.message),
   })
-  const ajouterNote = action(() => prospectsAPI.note(p.id, note), 'Échange enregistré')
-  const changerStatut = action(({ statut, motif: m }) => prospectsAPI.statut(p.id, statut, m), 'Statut mis à jour')
-  const majRelance = action((date) => prospectsAPI.modifier(p.id, { prochaine_relance: date || null }), 'Relance planifiée')
-  const mAttribuer = action(() => prospectsAPI.modifier(p.id, { responsable: userId }), 'Prospect attribué')
-  const convertir = action((data) => prospectsAPI.convertir(p.id, data), 'Client créé')
+  const ajouterNote = useAction(() => prospectsAPI.note(p.id, note), 'Échange enregistré')
+  const changerStatut = useAction(({ statut, motif: m }) => prospectsAPI.statut(p.id, statut, m), 'Statut mis à jour')
+  const majRelance = useAction((date) => prospectsAPI.modifier(p.id, { prochaine_relance: date || null }), 'Relance planifiée')
+  const mAttribuer = useAction(() => prospectsAPI.modifier(p.id, { responsable: userId }), 'Prospect attribué')
+  const convertir = useAction((data) => prospectsAPI.convertir(p.id, data), 'Client créé')
 
   return (
     <Modal open onClose={onFermer} size="xl" icon={Inbox} title={`${p.nom} — ${p.statut_libelle}`}

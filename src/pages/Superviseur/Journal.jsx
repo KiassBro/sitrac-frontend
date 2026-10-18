@@ -181,8 +181,8 @@ export default function Journal() {
         {detail && (
           <div>
             <div className="grid grid-cols-2 gap-4 mb-5">
-              {[['Action', <span className={`font-black text-xs px-2 py-0.5 rounded ${(ACTION_META[detail.action]||ACTION_META.INSERT).bg} ${(ACTION_META[detail.action]||ACTION_META.INSERT).text}`}>{detail.action}</span>],
-                ['Table',  <span className="font-mono text-brand-blue">{detail.table}</span>],
+              {[['Action', <span key="action" className={`font-black text-xs px-2 py-0.5 rounded ${(ACTION_META[detail.action]||ACTION_META.INSERT).bg} ${(ACTION_META[detail.action]||ACTION_META.INSERT).text}`}>{detail.action}</span>],
+                ['Table',  <span key="table" className="font-mono text-brand-blue">{detail.table}</span>],
                 ['Utilisateur', `${detail.user_login} (${detail.user_dept})`],
                 ['Horodatage', fmtDateTime(detail.ts)]
               ].map(([k,v])=>(

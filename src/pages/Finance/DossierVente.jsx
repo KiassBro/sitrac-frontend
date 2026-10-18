@@ -49,7 +49,7 @@ export default function DossierVenteFinance() {
         <StatCard icon={Folder} value={pcs.filter(p => p.a_facture_pro).length}
           label="Avec Facture Pro" color="green"/>
         <StatCard icon={Folder} value={fmt(totalCA)}
-          label="CA total (€)" color="purple"/>
+          label="CA prévisionnel (€)" color="purple"/>
       </div>
 
       {/* Filtres */}

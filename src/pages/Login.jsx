@@ -5,7 +5,7 @@ import {
 } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
-import fondBaobabs from '../assets/Baobab.png'
+import fondBaobabs from '../assets/Baobab.webp'
 
 // Messages qui défilent sur l'image (fonctionnalités réelles de SITRAC)
 const MESSAGES = [

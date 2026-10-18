@@ -365,7 +365,6 @@ function ClotureForm({ pc, onBack }) {
   const [lignes,     setLignes]     = useState([])
   const [obs,        setObs]        = useState('')
   const [dateCl,     setDateCl]     = useState(today())
-  const [totRec,     setTotRec]     = useState(0)
   const [inited,     setInited]     = useState(false)
   const [clotureId,  setClotureId]  = useState(null)
   const [printOpen,  setPrintOpen]  = useState(false)
@@ -384,10 +383,16 @@ function ClotureForm({ pc, onBack }) {
     setLignes(cloture.lignes || [])
     setObs(cloture.observation || '')
     setDateCl(cloture.date_cloture || today())
-    setTotRec(cloture.total_recettes || 0)
     setClotureId(cloture.id)
     setInited(true)
   }
+
+  // RG 24 : les recettes sont calculées par le serveur = somme des paiements du dossier
+  const { data: paiements = [] } = useQuery({
+    queryKey: ['paiements', pc.id],
+    queryFn:  () => financeAPI.getPaiements(`?programme_client=${pc.id}`).then(r => r.results || r),
+  })
+  const totRec = paiements.reduce((s,p) => s + (+p.montant||0), 0)
 
   const saveMut = useMutation({
     mutationFn: (data) => clotureId
@@ -434,16 +439,13 @@ function ClotureForm({ pc, onBack }) {
 
   const save = () => {
     if (+totRec <= 0) {
-      toast.error('Le total des recettes doit être supérieur à 0')
+      toast.error('Aucun paiement enregistré pour ce dossier : la clôture est impossible (RG 24)')
       return
     }
     confirmSave(() => saveMut.mutate({
       programme_client: pc.id,
       date_cloture:     dateCl,
       observation:      obs,
-      total_recettes:   +totRec||0,
-      total_depenses:   totalDep,
-      benefice_net:     benefice,
       lignes: lignes.map((l,i) => ({
         description: l.description,
         prestataire: l.prestataire||'',
@@ -515,11 +517,11 @@ function ClotureForm({ pc, onBack }) {
           <div className="grid grid-cols-2 gap-4">
             <div className="form-group mb-0">
               <label className="form-label">
-                Total Recettes (€) <span className="form-req">*</span>
+                Total Recettes (€) — somme des paiements du dossier
               </label>
-              <input type="number" step="0.01" className="form-control"
-                value={totRec} onChange={e=>setTotRec(e.target.value)}
-                placeholder="0.00"/>
+              <input type="number" className="form-control bg-gray-50 dark:bg-gray-800"
+                value={totRec.toFixed(2)} readOnly disabled/>
+              <p className="form-hint">Calculé automatiquement à partir des paiements enregistrés (RG 24).</p>
             </div>
             <div className="form-group mb-0">
               <label className="form-label">Observation</label>

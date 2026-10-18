@@ -73,7 +73,7 @@ export default function Statistiques() {
         <StatCard icon={Database}    value={stats?.total_actions ?? '…'} label="Actions totales"   color="orange"/>
         <StatCard icon={Users}       value={users.length}                 label="Utilisateurs"      color="blue"/>
         <StatCard icon={TrendingUp}  value={pcs.length}                   label="Dossiers clients"  color="green"/>
-        <StatCard icon={BarChart2}   value={`${totalCA.toLocaleString('fr-FR')} €`} label="CA total" color="purple"/>
+        <StatCard icon={BarChart2}   value={`${totalCA.toLocaleString('fr-FR')} €`} label="CA prévisionnel (prix × PAX)" color="purple"/>
       </div>
 
       <ApiState isLoading={isLoading} error={null} loadingText="Chargement des statistiques...">

@@ -5,62 +5,59 @@ import { useAuthStore } from './store/authStore'
 
 // Communes
 import Login           from './pages/Login'
-import Dashboard       from './pages/Dashboard'
-import Notifications   from './pages/Notifications'
-import Profile         from './pages/Profile'
-import Chatbot         from './pages/Chatbot'
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Notifications = lazy(() => import('./pages/Notifications'))
+const Profile = lazy(() => import('./pages/Profile'))
+const Chatbot = lazy(() => import('./pages/Chatbot'))
 
 // Sales
-import Destinations          from './pages/Sales/Destinations'
-import Programmes            from './pages/Sales/Programmes'
-import InformationsGenerales from './pages/Sales/InformationsGenerales'
-import ProgrammeClient       from './pages/Sales/ProgrammeClient'
-import Cotation              from './pages/Sales/Cotation'
-import FacturePro            from './pages/Sales/FacturePro'
-import CotationLibre         from './pages/Sales/CotationLibre'
-import FactureProLibre       from './pages/Sales/FactureProLibre'
+const Destinations = lazy(() => import('./pages/Sales/Destinations'))
+const Programmes = lazy(() => import('./pages/Sales/Programmes'))
+const InformationsGenerales = lazy(() => import('./pages/Sales/InformationsGenerales'))
+const ProgrammeClient = lazy(() => import('./pages/Sales/ProgrammeClient'))
+const Cotation = lazy(() => import('./pages/Sales/Cotation'))
+const FacturePro = lazy(() => import('./pages/Sales/FacturePro'))
+const CotationLibre = lazy(() => import('./pages/Sales/CotationLibre'))
+const FactureProLibre = lazy(() => import('./pages/Sales/FactureProLibre'))
 
 // Booking
-import Brieffings            from './pages/Booking/Brieffings'
-import Provision             from './pages/Booking/Provision'
-import DossierVenteBooking   from './pages/Booking/DossierVente'
+const Brieffings = lazy(() => import('./pages/Booking/Brieffings'))
+const Provision = lazy(() => import('./pages/Booking/Provision'))
+const DossierVenteBooking = lazy(() => import('./pages/Booking/DossierVente'))
 
 // Finance
-import Paiement              from './pages/Finance/Paiement'
-import FactureDefinitive     from './pages/Finance/FactureDefinitive'
-import Cloture               from './pages/Finance/Cloture'
-import Recu                  from './pages/Finance/Recu'
-import DossierVenteFinance   from './pages/Finance/DossierVente'
-import DossierBookingFinance from './pages/Finance/DossierBooking'
+const Paiement = lazy(() => import('./pages/Finance/Paiement'))
+const FactureDefinitive = lazy(() => import('./pages/Finance/FactureDefinitive'))
+const Cloture = lazy(() => import('./pages/Finance/Cloture'))
+const Recu = lazy(() => import('./pages/Finance/Recu'))
+const DossierVenteFinance = lazy(() => import('./pages/Finance/DossierVente'))
+const DossierBookingFinance = lazy(() => import('./pages/Finance/DossierBooking'))
 
 
 // Administration
-import AdminDashboard        from './pages/Admin/AdminDashboard'
-import Utilisateurs          from './pages/Admin/Utilisateurs'
-import Constantes            from './pages/Admin/Constantes'
-import Historique            from './pages/Admin/Historique'
-import Statistiques          from './pages/Admin/Statistiques'
-import Portefeuilles         from './pages/Admin/Portefeuilles'
+const AdminDashboard = lazy(() => import('./pages/Admin/AdminDashboard'))
+const Utilisateurs = lazy(() => import('./pages/Admin/Utilisateurs'))
+const Constantes = lazy(() => import('./pages/Admin/Constantes'))
+const Historique = lazy(() => import('./pages/Admin/Historique'))
+const Statistiques = lazy(() => import('./pages/Admin/Statistiques'))
+const Portefeuilles = lazy(() => import('./pages/Admin/Portefeuilles'))
 
 // Superviseur
-import Journal               from './pages/Superviseur/Journal'
-import SuperviseurInsert     from './pages/Superviseur/Insert'
-import SuperviseurUpdate     from './pages/Superviseur/Update'
-import SuperviseurDelete     from './pages/Superviseur/Delete'
-import SuperviseurStats      from './pages/Superviseur/Stats'
+const Journal = lazy(() => import('./pages/Superviseur/Journal'))
+const SuperviseurInsert = lazy(() => import('./pages/Superviseur/Insert'))
+const SuperviseurUpdate = lazy(() => import('./pages/Superviseur/Update'))
+const SuperviseurDelete = lazy(() => import('./pages/Superviseur/Delete'))
+const SuperviseurStats = lazy(() => import('./pages/Superviseur/Stats'))
 
-// Icônes pour les routes DossierVente (lecture seule)
-import { Folder, FolderOpen, Calculator, FileText, PlusCircle, Edit, Trash2, BarChart2 } from 'lucide-react'
-import PlaceholderPage from './pages/PlaceholderPage'
 
 // Client & Communication — page du personnel
-import RelationClient        from './pages/RelationClient/RelationClient'
-import Prestataires          from './pages/Prestataires/Prestataires'
-import Planning              from './pages/Ressources/Planning'
-import Prospects             from './pages/Prospects/Prospects'
-import Satisfaction          from './pages/Satisfaction/Satisfaction'
-import Avis                  from './pages/Public/Avis'
-import ExportsComptables     from './pages/Finance/ExportsComptables'
+const RelationClient = lazy(() => import('./pages/RelationClient/RelationClient'))
+const Prestataires = lazy(() => import('./pages/Prestataires/Prestataires'))
+const Planning = lazy(() => import('./pages/Ressources/Planning'))
+const Prospects = lazy(() => import('./pages/Prospects/Prospects'))
+const Satisfaction = lazy(() => import('./pages/Satisfaction/Satisfaction'))
+const Avis = lazy(() => import('./pages/Public/Avis'))
+const ExportsComptables = lazy(() => import('./pages/Finance/ExportsComptables'))
 
 // Espace client externe : chargé à la demande, jamais inclus dans le bundle du personnel.
 // Authentification propre (jeton du portail), indépendante de useAuthStore.
@@ -97,12 +94,6 @@ function RequireGuest({ children }) {
   const { user } = useAuthStore()
   return user ? <Navigate to="/dashboard" replace /> : children
 }
-const PH = (title, bc, desc, Icon, depts) => (
-  <RequireAuth depts={depts}>
-    <PlaceholderPage title={title} breadcrumb={bc} desc={desc} icon={Icon} />
-  </RequireAuth>
-)
-
 const SALES   = ['Sales','Administration']
 const BOOKING = ['Booking','Administration']
 const FINANCE = ['Finance','Administration']
@@ -114,6 +105,7 @@ export default function App() {
   useEffect(() => { initTheme() }, [])
 
   return (
+    <Suspense fallback={<div className="p-10 text-center text-sm text-gray-400">Chargement…</div>}>
     <Routes>
       <Route path="/login" element={<RequireGuest><Login /></RequireGuest>} />
       <Route path="/" element={<Navigate to={user ? '/dashboard' : '/login'} replace />} />
@@ -195,5 +187,6 @@ export default function App() {
 
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
+    </Suspense>
   )
 }

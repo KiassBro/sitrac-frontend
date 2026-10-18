@@ -264,7 +264,8 @@ export default function Brieffings() {
   const [curPC, setCurPC] = useState(null)
   const [search, setSearch] = useState('')
 
-  const eligible = pcs.filter(p => p.a_facture_pro)
+  // RG 16 : seuls les dossiers dont la facture pro est VALIDÉE peuvent passer au Booking
+  const eligible = pcs.filter(p => p.facture_pro_validee && !p.annule)
   const filtered  = eligible.filter(p => !search || (p.client_nom||'').toLowerCase().includes(search.toLowerCase()))
 
   if (curPC) return (
@@ -281,11 +282,11 @@ export default function Brieffings() {
       </div>
       <div className="grid grid-cols-3 gap-4 mb-6">
         <StatCard icon={ClipboardList} value={eligible.length} label="Dossiers éligibles" color="orange"/>
-        <StatCard icon={ClipboardList} value={pcs.filter(p=>p.a_facture_pro).length} label="Avec Facture Pro" color="blue"/>
+        <StatCard icon={ClipboardList} value={pcs.filter(p=>p.a_facture_pro && !p.facture_pro_validee).length} label="FP en brouillon" color="blue"/>
         <StatCard icon={ClipboardList} value={pcs.filter(p=>!p.a_facture_pro).length} label="En attente FP" color="red"/>
       </div>
       {pcs.length > 0 && eligible.length === 0 && (
-        <Alert type="warning">⚠️ Aucun dossier avec Facture Pro. Créez d'abord une Facture Pro dans le département Sales (RG 16).</Alert>
+        <Alert type="warning">⚠️ Aucun dossier avec une Facture Pro validée. La Facture Pro doit être créée et validée par le département Sales (RG 16).</Alert>
       )}
       <div className="card">
         <div className="card-header">

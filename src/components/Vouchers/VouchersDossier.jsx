@@ -27,20 +27,20 @@ export default function VouchersDossier({ pc, open, onClose }) {
   const etat = useQuery({ queryKey: cle, queryFn: () => vouchersAPI.dossier(pc.id), enabled: open && !!pc })
   const d = etat.data
   const rafraichir = () => qc.invalidateQueries({ queryKey: cle })
-  const action = (fn, succes) => useMutation({
+  const useAction = (fn, succes) => useMutation({
     mutationFn: fn,
     onSuccess: (r) => { toast.success(typeof succes === 'function' ? succes(r) : succes); rafraichir() },
     onError: (e) => toast.error(e.message),
   })
 
-  const generer   = action(() => vouchersAPI.generer(pc.id),
+  const generer   = useAction(() => vouchersAPI.generer(pc.id),
     (r) => r.crees.length ? `${r.crees.length} voucher(s) généré(s)` : 'Aucun nouveau voucher à générer')
-  const envoyer   = action(({ uuid, email }) => vouchersAPI.envoyer(uuid, email), (r) => `Voucher envoyé à ${r.envoye_a}`)
-  const publier   = action(({ uuid, visible }) => vouchersAPI.publier(uuid, visible),
+  const envoyer   = useAction(({ uuid, email }) => vouchersAPI.envoyer(uuid, email), (r) => `Voucher envoyé à ${r.envoye_a}`)
+  const publier   = useAction(({ uuid, visible }) => vouchersAPI.publier(uuid, visible),
     (r) => r.publie_client ? 'Voucher visible dans l’espace client' : 'Voucher retiré de l’espace client')
-  const regenerer = action((uuid) => vouchersAPI.regenerer(uuid),
+  const regenerer = useAction((uuid) => vouchersAPI.regenerer(uuid),
     (r) => r.ligne_trouvee ? 'Voucher mis à jour avec le brieffing' : 'PDF régénéré (ligne introuvable dans le brieffing)')
-  const annuler   = action((uuid) => vouchersAPI.annuler(uuid), 'Voucher annulé')
+  const annuler   = useAction((uuid) => vouchersAPI.annuler(uuid), 'Voucher annulé')
 
   if (!pc) return null
   const peut = d?.peut_agir

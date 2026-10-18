@@ -140,7 +140,10 @@ export default function ProgrammeClient() {
                     </td>
                     <td><Badge variant="info">{p.programme_nom}</Badge></td>
                     <td>{p.nb_pax}</td>
-                    <td><strong>{(+p.prix_vente).toLocaleString('fr-FR')} €</strong></td>
+                    <td>
+                      <strong>{(+p.prix_vente).toLocaleString('fr-FR')} €</strong>
+                      <span className="block text-[10px] text-gray-400">/ pers. · total {((+p.prix_vente||0)*(+p.nb_pax||1)).toLocaleString('fr-FR')} €</span>
+                    </td>
                     <td className="text-sm text-gray-500">{fmtDate(p.date_vente)}</td>
                     <td className="text-xs text-gray-400">{fmtDate(p.date_debut)} → {fmtDate(p.date_fin)}</td>
                     <td>{p.a_cotation ? <Badge variant="active">Oui</Badge> : <Badge variant="inactive">Non</Badge>}</td>
@@ -292,7 +295,7 @@ export default function ProgrammeClient() {
           </div>
           <div className="form-group">
             <label className="form-label">
-              Prix de vente (€) <span className="form-req">*</span>
+              Prix de vente par personne (€) <span className="form-req">*</span>
               {selectedProg && (
                 <span className="ml-2 text-[10px] font-normal text-gray-400">
                   (catalogue : {(+selectedProg.prix).toLocaleString('fr-FR')} €)
@@ -310,6 +313,10 @@ export default function ProgrammeClient() {
                 ✓ Prix automatiquement rempli depuis le programme — vous pouvez le modifier
               </p>
             )}
+            <p className="form-hint">
+              Total du dossier : <strong>{((+watch('prix_vente')||0) * (+watch('nb_pax')||1)).toLocaleString('fr-FR')} €</strong>
+              {' '}({+watch('nb_pax')||1} PAX)
+            </p>
           </div>
         </div>
 
@@ -328,8 +335,14 @@ export default function ProgrammeClient() {
             <input
               type="date"
               className={`form-control ${errors.date_fin ? 'border-brand-red' : ''}`}
-              {...register('date_fin', { required: true })}
+              min={watch('date_debut') || undefined}
+              {...register('date_fin', {
+                required: true,
+                validate: (v) => !watch('date_debut') || v >= watch('date_debut')
+                  || 'La date de fin ne peut pas précéder la date de début',
+              })}
             />
+            {errors.date_fin?.message && <p className="text-xs text-brand-red mt-1">{errors.date_fin.message}</p>}
           </div>
         </div>
       </Modal>
