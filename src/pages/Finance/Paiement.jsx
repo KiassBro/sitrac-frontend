@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { CreditCard, Plus, Trash2, Eye } from 'lucide-react'
 import { useProgrammeClients } from '../../hooks/useApi'
@@ -16,11 +16,13 @@ const TYPES_PMT = ['Espèces','Virement','Chèque','Mobile Money','Transfert','C
 // ─── Formulaire d'ajout de paiement (composant isolé) ─────────
 // Isoler dans son propre composant garantit que useForm est
 // réinitialisé proprement à chaque ouverture du modal
-function PaiementForm({ pcId, onSuccess }) {
+function PaiementForm({ pcId, onSuccess, resume }) {
   const {
     register,
     handleSubmit,
     reset,
+    setValue,
+    getValues,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -59,6 +61,13 @@ function PaiementForm({ pcId, onSuccess }) {
   })
 
   const onSubmit = (data) => addMut.mutate(data)
+
+  // Reste dû et nom du client déjà connus : proposés d'office (modifiables)
+  useEffect(() => {
+    if (!resume) return
+    if (!getValues('montant') && resume.restant > 0) setValue('montant', resume.restant)
+    if (!getValues('remettant') && resume.client_nom) setValue('remettant', resume.client_nom)
+  }, [resume])
 
   return (
     <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-2">
@@ -188,7 +197,7 @@ export default function Paiement() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['paiements', curPCId] })
       qc.invalidateQueries({ queryKey: ['paiements-resume', curPCId] })
-      toast.success('Paiement supprimé', { icon: '⚠️' })
+      toast.success('Paiement supprimé')
     },
     onError: e => toast.error(e.message),
   })
@@ -212,7 +221,7 @@ export default function Paiement() {
     <Layout breadcrumb={['SITRAC','Finance','Dossier Finance','Paiement Client']}>
       <div className="mb-5">
         <h1 className="page-title"><CreditCard size={22} className="text-orange"/> Paiement Client</h1>
-        <p className="page-sub">Gestion des paiements liés aux factures définitives (RG 23, 24, 25)</p>
+        <p className="page-sub">Gestion des paiements liés aux factures définitives</p>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -329,6 +338,7 @@ export default function Paiement() {
           <PaiementForm
             key={curPCId}  // force remount si on change de dossier
             pcId={curPCId}
+            resume={resume}
             onSuccess={handlePmtSuccess}
           />
         )}

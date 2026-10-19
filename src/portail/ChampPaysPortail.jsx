@@ -1,3 +1,4 @@
+import CodePays from '../components/UI/CodePays'
 // ─────────────────────────────────────────────────────────────────
 // Espace client — Champ « Pays » ou « Nationalité » (liste officielle ISO)
 //
@@ -62,7 +63,7 @@ export default function ChampPaysPortail({ mode = 'pays', id, value, onChange, r
         >
           {choix ? (
             <>
-              <span className="text-base leading-none" aria-hidden>{choix.drapeau}</span>
+              <CodePays code={choix.code}/>
               <span className="truncate">{affiche(choix)}</span>
             </>
           ) : inconnu ? (
@@ -102,7 +103,7 @@ export default function ChampPaysPortail({ mode = 'pays', id, value, onChange, r
           placeholder={estNat ? tx.chercher_nat : tx.chercher_pays}
           rendu={(p) => (
             <>
-              <span className="text-base leading-none" aria-hidden>{p.drapeau}</span>
+              <CodePays code={p.code}/>
               <span className="truncate">{affiche(p)}</span>
               {estNat && <span className="text-xs text-rt-stone truncate">{en ? p.nom_en || p.nom : p.nom}</span>}
             </>

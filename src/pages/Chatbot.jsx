@@ -1,54 +1,72 @@
 import { useState, useRef, useEffect } from 'react'
-import {
-  Bot, Send, Trash2, User, Loader2, Sparkles, Database
-} from 'lucide-react'
+import { Bot, Send, Trash2, User, Loader2, Sparkles, Database } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import { chatbotAPI, salesAPI } from '../utils/api'
 import Layout from '../components/Layout/Layout'
 import GIPrintModal from '../components/PDF/GIPrintModal'
 import CotationPrintModal   from '../components/PDF/CotationPrintModal'
 import FactureProPrintModal from '../components/PDF/FactureProPrintModal'
+import { Printer } from 'lucide-react'
 
+// Suggestions selon le département : uniquement des données auxquelles il a accès
 const SUGGESTIONS_BY_DEPT = {
   Sales: [
-    { label:'Liste mes clients',  q:'Donne-moi la liste de tous les clients.' },
-    { label:'Dossiers de vente',  q:'Montre-moi tous les dossiers de vente.' },
-    { label:'Destinations dispo', q:'Quelles sont les destinations disponibles ?' },
-    { label:'Programmes actifs',  q:'Liste tous les programmes touristiques.' },
-    { label:'Calcul TOTAL 5',     q:'Comment se calcule le TOTAL 5 dans la cotation ?' },
-    { label:'Fiche GI en PDF',    q:'Donne-moi la fiche GI du premier client en PDF.' },
-    { label:'RG Facture Pro',     q:'Quelles sont les règles pour créer une Facture Pro ?' },
-    { label:'Flux complet',       q:'Explique le flux complet Sales → Finance.' },
+    { label:'Mes clients',              q:'Donne-moi la liste de mes clients avec leur nationalité et leurs dates de voyage.' },
+    { label:'Dossiers à venir',         q:'Quels dossiers partent dans les 60 prochains jours ?' },
+    { label:'Échéances à relancer',     q:'Quelles échéances de paiement de mes clients sont en retard ?' },
+    { label:'Tarifs hôtels',            q:'Donne-moi les tarifs des hébergements, par prestataire.' },
+    { label:'Prospects à traiter',      q:'Liste les prospects au statut nouveau ou contacté.' },
+    { label:'Factures pro en brouillon',q:'Quelles factures pro sont encore en brouillon ?' },
+    { label:'Calcul du TOTAL 5',        q:'Comment se calcule le TOTAL 5 dans la cotation ?' },
   ],
   Booking: [
-    { label:'Dossiers reçus',     q:'Montre-moi les dossiers de vente disponibles.' },
-    { label:'Brieffings',         q:'Liste les brieffings prestataires.' },
-    { label:'Provisions',         q:'Comment fonctionnent les provisions ?' },
-    { label:'RG Brieffing',       q:'Quelles sont les règles du brieffing ?' },
-    { label:'Flux Booking',       q:'Explique le rôle du département Booking.' },
+    { label:'Départs à préparer',       q:'Quels dossiers partent dans les 30 prochains jours, et lesquels n\'ont pas encore de brieffing ?' },
+    { label:'Brieffings',               q:'Liste les brieffings avec chauffeur, guide et véhicule.' },
+    { label:'Provisions',               q:'Liste les provisions avec leur montant total.' },
+    { label:'Tarifs prestataires',      q:'Donne-moi les tarifs de tous les prestataires, par catégorie.' },
+    { label:'Avis des voyageurs',       q:'Quelles sont les dernières notes de satisfaction des guides et chauffeurs ?' },
   ],
   Finance: [
-    { label:'Paiements',          q:'Liste les paiements enregistrés.' },
-    { label:'Clôtures',           q:'Liste les clôtures avec bénéfices.' },
-    { label:'Dossiers Finance',   q:'Montre-moi les dossiers disponibles.' },
-    { label:'KPIs Finance',       q:'Résumé des indicateurs financiers.' },
-    { label:'RG Clôture',         q:'Explique la règle RG 24 — clôture.' },
+    { label:'Paiements Stripe',         q:'Liste les clients qui ont payé via Stripe, avec montant et date.' },
+    { label:'Échéances en retard',      q:'Quelles échéances de paiement sont en retard ?' },
+    { label:'Paiements du mois',        q:'Liste les paiements encaissés ce mois-ci, avec le total.' },
+    { label:'Clôtures et bénéfices',    q:'Liste les clôtures avec recettes, dépenses et bénéfice net.' },
+    { label:'Factures définitives',     q:'Liste les factures définitives avec leur total.' },
+    { label:'Chiffres clés',            q:'Donne-moi les chiffres clés de cette année.' },
   ],
   Administration: [
-    { label:'Tous les clients',   q:'Liste complète des clients.' },
-    { label:'Tous les dossiers',  q:'Liste tous les dossiers de vente.' },
-    { label:'Utilisateurs',       q:'Liste tous les utilisateurs.' },
-    { label:'Clôtures',           q:'Liste toutes les clôtures et bénéfices.' },
-    { label:'Fiche GI PDF',       q:'Donne-moi la fiche GI du client DUPONT en PDF.' },
-    { label:'Architecture',       q:'Architecture technique de SITRAC.' },
+    { label:'Tarifs des prestataires',  q:'Donne-moi la liste des prix de chaque prestataire.' },
+    { label:'Paiements Stripe',         q:'Liste les clients qui ont payé via Stripe, avec montant et date.' },
+    { label:'Échéances en retard',      q:'Quelles échéances de paiement sont en retard ?' },
+    { label:'Dossiers en cours',        q:'Liste les dossiers de vente avec les étapes déjà réalisées.' },
+    { label:'Chiffres clés',            q:'Donne-moi les chiffres clés de cette année.' },
+    { label:'Satisfaction voyageurs',   q:'Quelle est la note moyenne de satisfaction et les derniers avis ?' },
+    { label:'Utilisateurs',             q:'Liste les utilisateurs par département.' },
   ],
   Superviseur: [
-    { label:'Audit INSERT',       q:'10 dernières actions INSERT.' },
-    { label:'Audit DELETE',       q:'Dernières suppressions DELETE.' },
-    { label:'Utilisateurs',       q:'Liste tous les utilisateurs.' },
-    { label:'Clôtures',           q:'Liste toutes les clôtures.' },
-    { label:'RG Audit',           q:'Explique RG 37 et RG 38 sur l\'audit.' },
+    { label:'Suppressions récentes',    q:'Quelles sont les dernières suppressions (DELETE) ?' },
+    { label:'Ajouts récents',           q:'Quelles sont les 10 dernières insertions (INSERT) ?' },
+    { label:'Paiements en ligne',       q:'Liste les paiements en ligne et leur statut.' },
+    { label:'Chiffres clés',            q:'Donne-moi les chiffres clés de cette année.' },
+    { label:'Utilisateurs',             q:'Liste les utilisateurs par département.' },
   ],
+}
+
+// Raccourcis sous la zone de saisie (même logique de droits)
+const RACCOURCIS_BY_DEPT = {
+  Sales:          [['Clients','Liste mes clients.'], ['Dossiers','Liste mes dossiers de vente.'], ['Échéances','Échéances à payer de mes clients.'], ['Prestataires','Liste des prestataires et leurs tarifs.'], ['Prospects','Liste des prospects.']],
+  Booking:        [['Dossiers','Liste des dossiers de vente.'], ['Brieffings','Liste des brieffings.'], ['Provisions','Liste des provisions.'], ['Prestataires','Liste des prestataires et leurs tarifs.']],
+  Finance:        [['Paiements','Liste des paiements encaissés.'], ['Stripe','Paiements réglés via Stripe.'], ['Échéances','Échéances à payer.'], ['Clôtures','Liste des clôtures.'], ['Chiffres clés','Chiffres clés de cette année.']],
+  Administration: [['Clients','Liste des clients.'], ['Paiements','Liste des paiements encaissés.'], ['Stripe','Paiements réglés via Stripe.'], ['Prestataires','Liste des prestataires et leurs tarifs.'], ['Clôtures','Liste des clôtures.'], ['Chiffres clés','Chiffres clés de cette année.']],
+  Superviseur:    [['Journal','Dernières actions du journal d\'audit.'], ['Paiements','Liste des paiements encaissés.'], ['Clôtures','Liste des clôtures.'], ['Utilisateurs','Liste des utilisateurs.']],
+}
+
+const EXEMPLES_BY_DEPT = {
+  Sales:          ['Fiche GI de [nom du client] en PDF', 'Échéances en retard de mes clients', 'Tarifs des hôtels à Antsirabe'],
+  Booking:        ['Départs des 30 prochains jours', 'Tarifs des transporteurs', 'Brieffing du dossier [n°]'],
+  Finance:        ['Clients ayant payé via Stripe', 'Échéances en retard', 'Bénéfice net des clôtures'],
+  Administration: ['Liste des prix de chaque prestataire', 'Clients ayant payé via Stripe', 'Chiffres clés de cette année'],
+  Superviseur:    ['Dernières suppressions', 'Paiements en ligne du mois', 'Utilisateurs par département'],
 }
 
 const PDF_KEYWORDS = [
@@ -57,50 +75,77 @@ const PDF_KEYWORDS = [
   'télécharger','générer','document'
 ]
 
+// Gras / italique rendus en éléments React : aucun HTML venant de la base ou de l'IA
+// n'est injecté dans la page (les noms saisis sur le site public ne peuvent rien exécuter).
+function Inline({ text }) {
+  const morceaux = String(text).split(/(\*\*[^*]+\*\*|\*[^*\s][^*]*\*)/g)
+  return morceaux.map((m, i) => {
+    if (m.startsWith('**') && m.endsWith('**') && m.length > 4) return <strong key={i}>{m.slice(2, -2)}</strong>
+    if (m.startsWith('*') && m.endsWith('*') && m.length > 2) return <em key={i}>{m.slice(1, -1)}</em>
+    return <span key={i}>{m}</span>
+  })
+}
+
+const cellules = (ligne) => ligne.trim().replace(/^\||\|$/g, '').split('|').map((c) => c.trim())
+
+function Tableau({ lignes }) {
+  const [entete, ...reste] = lignes
+  const corps = reste.filter((l) => !/^\s*\|?\s*:?-{2,}/.test(l))
+  return (
+    <div className="my-2 overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+      <table className="w-full text-xs border-collapse">
+        <thead className="bg-gray-50 dark:bg-gray-900">
+          <tr>{cellules(entete).map((c, i) => (
+            <th key={i} className="px-3 py-2 text-left font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap border-b border-gray-200 dark:border-gray-700"><Inline text={c}/></th>
+          ))}</tr>
+        </thead>
+        <tbody>
+          {corps.map((l, i) => (
+            <tr key={i} className="border-b last:border-b-0 border-gray-100 dark:border-gray-800">
+              {cellules(l).map((c, j) => <td key={j} className="px-3 py-1.5 align-top"><Inline text={c}/></td>)}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
 function MarkdownText({ text, isUser }) {
+  const blocs = []
+  String(text || '').split('\n').forEach((line) => {
+    const dernier = blocs[blocs.length - 1]
+    if (line.trim().startsWith('|')) {
+      if (dernier?.type === 'table') dernier.lignes.push(line)
+      else blocs.push({ type: 'table', lignes: [line] })
+    } else blocs.push({ type: 'ligne', line })
+  })
+  const puce = isUser ? 'text-white/70' : 'text-orange'
   return (
     <div className="space-y-1">
-      {text.split('\n').map((line, i) => {
-        if (line.startsWith('## '))
-          return <h3 key={i} className="font-bold text-base mt-2 mb-1 first:mt-0">
-            {line.replace('## ','')}
-          </h3>
+      {blocs.map((b, i) => {
+        if (b.type === 'table') return <Tableau key={i} lignes={b.lignes}/>
+        const line = b.line
         if (line.startsWith('### '))
-          return <h4 key={i} className="font-semibold text-sm mt-1.5 mb-0.5">
-            {line.replace('### ','')}
-          </h4>
-        if (line.startsWith('- ')||line.startsWith('• '))
+          return <h4 key={i} className="font-semibold text-sm mt-1.5 mb-0.5"><Inline text={line.slice(4)}/></h4>
+        if (line.startsWith('## ') || line.startsWith('# '))
+          return <h3 key={i} className="font-bold text-base mt-2 mb-1 first:mt-0"><Inline text={line.replace(/^#+\s/, '')}/></h3>
+        if (/^\s*[-•*]\s/.test(line))
           return (
             <div key={i} className="flex gap-2 ml-1">
-              <span className={`mt-0.5 flex-shrink-0 text-xs
-                ${isUser?'text-white/70':'text-orange'}`}>•</span>
-              <span dangerouslySetInnerHTML={{
-                __html:line.slice(2)
-                  .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
-              }}/>
+              <span className={`mt-0.5 flex-shrink-0 text-xs ${puce}`}>•</span>
+              <span><Inline text={line.replace(/^\s*[-•*]\s/, '')}/></span>
             </div>
           )
-        if (line.match(/^\d+\./))
+        if (/^\d+\.\s/.test(line))
           return (
             <div key={i} className="flex gap-2 ml-1">
-              <span className={`mt-0.5 flex-shrink-0 text-xs font-bold
-                ${isUser?'text-white/70':'text-orange'}`}>
-                {line.match(/^(\d+)\./)?.[1]}.
-              </span>
-              <span dangerouslySetInnerHTML={{
-                __html:line.replace(/^\d+\.\s*/,'')
-                  .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
-              }}/>
+              <span className={`mt-0.5 flex-shrink-0 text-xs font-bold ${puce}`}>{line.match(/^(\d+)\./)[1]}.</span>
+              <span><Inline text={line.replace(/^\d+\.\s*/, '')}/></span>
             </div>
           )
-        if (line===''||line==='---') return <div key={i} className="h-1"/>
-        return (
-          <p key={i} dangerouslySetInnerHTML={{
-            __html:line
-              .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
-              .replace(/\*(.*?)\*/g,'<em>$1</em>')
-          }}/>
-        )
+        if (line.trim() === '' || line.trim() === '---') return <div key={i} className="h-1"/>
+        return <p key={i}><Inline text={line}/></p>
       })}
     </div>
   )
@@ -132,7 +177,7 @@ function MessageBubble({ msg, onPrint, onPrintCotation, onPrintFP }) {
             className="mt-2 flex items-center gap-2 px-4 py-2.5 rounded-xl
               text-sm font-semibold bg-orange text-white shadow-sm
               hover:bg-orange-dark hover:shadow-md transition-all">
-            🖨 Fiche GI — {msg.clientData.titre} {msg.clientData.nom}
+            <Printer size={15}/> Fiche GI — {msg.clientData.titre} {msg.clientData.nom}
           </button>
         )}
 
@@ -142,7 +187,7 @@ function MessageBubble({ msg, onPrint, onPrintCotation, onPrintFP }) {
             className="mt-2 flex items-center gap-2 px-4 py-2.5 rounded-xl
               text-sm font-semibold bg-gray-800 text-white shadow-sm
               hover:bg-gray-900 hover:shadow-md transition-all">
-            🖨 Cotation — {msg.cotationData.client_nom}
+            <Printer size={15}/> Cotation — {msg.cotationData.client_nom}
           </button>
         )}
 
@@ -152,7 +197,7 @@ function MessageBubble({ msg, onPrint, onPrintCotation, onPrintFP }) {
             className="mt-2 flex items-center gap-2 px-4 py-2.5 rounded-xl
               text-sm font-semibold bg-orange text-white shadow-sm
               hover:bg-orange-dark hover:shadow-md transition-all">
-            🖨 Facture Pro — {msg.fpData.client_nom}
+            <Printer size={15}/> Facture Pro — {msg.fpData.client_nom}
           </button>
         )}
 
@@ -185,7 +230,7 @@ export default function Chatbot() {
 
   const [messages,    setMessages]    = useState([{
     role:'assistant',
-    content:`Bonjour **${user?.name||''}** ! 👋\n\nJe suis **SITRA-BOT**, votre assistant IA connecté à la base de données SITRAC.\n\nEn tant que **${dept}**, essayez :\n- *"Liste mes clients"*\n- *"Fiche GI de [nom] en PDF"*\n- *"Comment calculer le TOTAL 5 ?"*`,
+    content:`Bonjour **${user?.name||''}** !\n\nJe suis **SITRA-BOT**, l'assistant connecté aux données de SITRAC. Je réponds selon les droits du département **${dept}** : clients, dossiers, prestataires et tarifs, paiements, échéances, factures, clôtures…\n\nPar exemple :\n${(EXEMPLES_BY_DEPT[dept] || EXEMPLES_BY_DEPT.Sales).map(e => `- ${e}`).join('\n')}`,
     ts:Date.now(), toolsUsed:[], clientData:null,
   }])
   const [input,       setInput]           = useState('')
@@ -254,7 +299,7 @@ export default function Chatbot() {
       const errMsg = e.data?.error || e.message || 'Erreur'
       setMessages(prev => [...prev, {
         role:'assistant',
-        content:`❌ **Erreur** : ${errMsg}`,
+        content:`**Erreur** : ${errMsg}`,
         ts:Date.now(), toolsUsed:[], clientData:null,
       }])
     } finally {
@@ -264,7 +309,7 @@ export default function Chatbot() {
 
   const clearChat = () => setMessages([{
     role:'assistant',
-    content:`Réinitialisé 🔄\n\nComment puis-je vous aider, **${user?.name}** ?`,
+    content:`Conversation réinitialisée.\n\nComment puis-je vous aider, **${user?.name}** ?`,
     ts:Date.now(), toolsUsed:[], clientData:null,
   }])
 
@@ -379,14 +424,10 @@ export default function Chatbot() {
 
           <div className="p-3 bg-white dark:bg-gray-800">
             <div className="flex gap-2 mb-3 overflow-x-auto pb-1">
-              {['Clients','Dossiers','Programmes','Paiements','Clôtures','PDF GI']
-                .map(chip=>(
+              {(RACCOURCIS_BY_DEPT[dept] || RACCOURCIS_BY_DEPT.Sales)
+                .map(([chip, question])=>(
                   <button key={chip} disabled={loading}
-                    onClick={()=>sendMessage(
-                      chip==='PDF GI'
-                        ? 'Donne-moi la fiche GI du premier client en PDF'
-                        : `Montre-moi : ${chip.toLowerCase()}`
-                    )}
+                    onClick={()=>sendMessage(question)}
                     className="flex-shrink-0 px-3 py-1 rounded-full text-xs
                       border border-gray-200 dark:border-gray-600
                       bg-gray-50 dark:bg-gray-700
@@ -413,7 +454,7 @@ export default function Chatbot() {
                       e.preventDefault(); sendMessage()
                     }
                   }}
-                  placeholder='Ex: "Fiche GI de DUPONT en PDF" · "Liste mes clients"'
+                  placeholder={`Ex. : « ${(EXEMPLES_BY_DEPT[dept] || EXEMPLES_BY_DEPT.Sales)[0]} »`}
                   disabled={loading}
                   className="w-full resize-none rounded-xl border border-gray-200
                     dark:border-gray-600 bg-gray-50 dark:bg-gray-700

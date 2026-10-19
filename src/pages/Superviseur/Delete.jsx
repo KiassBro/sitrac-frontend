@@ -41,7 +41,7 @@ export default function SuperviseurDelete() {
       <div className="mb-5">
         <h1 className="page-title"><Trash2 size={22} className="text-brand-red"/> Journal des Suppressions (DELETE)</h1>
         <p className="page-sub flex items-center gap-2">
-          Toutes les suppressions d'enregistrements — archivées selon RG 37
+          Toutes les suppressions d'enregistrements, conservées dans les archives
           <span className="flex items-center gap-1.5 text-xs font-bold text-brand-green">
             <span className="w-2 h-2 rounded-full bg-brand-green animate-pulse inline-block"/>
             Surveillance active
@@ -54,7 +54,7 @@ export default function SuperviseurDelete() {
           <AlertTriangle size={18} className="text-brand-red flex-shrink-0"/>
           <p className="text-sm text-brand-red">
             <strong>{total} suppression{total > 1 ? 's' : ''}</strong> détectée{total > 1 ? 's' : ''} dans la base de données.
-            Toutes sont archivées et traçables (RG 37).
+            Toutes sont archivées et traçables.
           </p>
         </div>
       )}
@@ -87,7 +87,7 @@ export default function SuperviseurDelete() {
             value={fTable} onChange={e=>{setFTable(e.target.value);setPage(1)}}/>
           <input type="date" className="form-control py-1.5 text-xs w-40"
             value={fDate} onChange={e=>{setFDate(e.target.value);setPage(1)}}/>
-          <input className="form-control py-1.5 text-xs w-48" placeholder="🔍 Rechercher..."
+          <input className="form-control py-1.5 text-xs w-48" placeholder="Rechercher..."
             value={search} onChange={e=>{setSearch(e.target.value);setPage(1)}}/>
           <button className="btn btn-ghost btn-sm" onClick={()=>{setFTable('');setFDate('');setSearch('');setPage(1)}}>
             Réinitialiser
@@ -109,7 +109,7 @@ export default function SuperviseurDelete() {
                 <span className="text-brand-purple flex-shrink-0">{l.user_login}</span>
                 <span className="text-gray-500 dark:text-gray-400 flex-1 truncate">{l.detail}</span>
                 {l.donnees_avant && (
-                  <span className="text-[10px] text-red-300 flex-shrink-0">🗃 archivé</span>
+                  <span className="text-[10px] text-red-300 flex-shrink-0">archivé</span>
                 )}
               </div>
             ))}

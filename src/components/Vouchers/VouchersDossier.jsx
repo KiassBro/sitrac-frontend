@@ -135,7 +135,7 @@ export default function VouchersDossier({ pc, open, onClose }) {
                                 </button>{' '}
                                 <button className="btn btn-ghost btn-xs" title="Annuler le voucher"
                                   onClick={() => confirm({
-                                    icon: '🎫', type: 'warning', title: 'Annuler le voucher',
+                                    icon:'voucher', type: 'warning', title: 'Annuler le voucher',
                                     msg: `Le voucher ${v.numero} sera annulé et retiré de l'espace client. Pensez à prévenir le prestataire s'il l'a déjà reçu.`,
                                     confirmText: 'Oui, annuler', onConfirm: () => annuler.mutate(v.uuid),
                                   })}>

@@ -7,7 +7,7 @@ import {
   Users, Car, BarChart2, ClipboardList, Package, FileCheck,
   CreditCard, FolderOpen, Receipt, Shield, Settings,
   History, Database, PlusCircle, Edit, Trash2,
-  LogOut, ChevronLeft, ChevronRight, Folder, Bot, Handshake, Building2, CalendarRange, Inbox, Star, FileSpreadsheet,
+  LogOut, Folder, Bot, Handshake, Building2, CalendarRange, Inbox, Star, FileSpreadsheet,
   Briefcase
 } from 'lucide-react'
 
@@ -118,7 +118,7 @@ const DEPT_LINKS = {
 }
 
 export default function Sidebar() {
-  const { user, sidebarCollapsed, toggleSidebar } = useAuthStore()
+  const { user, sidebarCollapsed } = useAuthStore()
   const { showConfirm } = useUiStore()
   const navigate = useNavigate()
 
@@ -153,7 +153,7 @@ export default function Sidebar() {
 
   const handleLogout = () => {
     showConfirm({
-      icon:'👋', type:'danger', title:'Déconnexion',
+      icon:'deconnexion', type:'danger', title:'Déconnexion',
       msg:'Êtes-vous sûr de vouloir vous déconnecter ?',
       confirmText:'Oui, déconnecter',
       onConfirm: () => {
@@ -165,18 +165,14 @@ export default function Sidebar() {
 
   return (
     <aside
-      // ✅ APRÈS — transition uniquement sur width :
       className={`fixed top-0 left-0 h-full flex flex-col bg-white dark:bg-gray-900
         border-r border-gray-200 dark:border-gray-700 shadow-sm z-[300]
         overflow-hidden
         ${sidebarCollapsed ? 'w-[68px]' : 'w-[260px]'}`}
       style={{
-        // ✅ Transition uniquement sur width — pas de transition-all
+        // Transition uniquement sur la largeur (pas de transform : l'élément
+        // fixe reste attaché à la fenêtre, y compris sous Microsoft Edge)
         transition: 'width 300ms ease',
-        // ✅ Force le GPU rendering pour Edge — évite le recalcul de position
-        willChange: 'width',
-        // ✅ Évite que Edge crée un stacking context parasite
-        transform: 'translateZ(0)',
       }}
     >
       {/* Logo */}
@@ -245,7 +241,7 @@ export default function Sidebar() {
           {!sidebarCollapsed && <span>Mon Profil</span>}
         </NavLink>
 
-        {/* ✅ NOUVEAU — Assistant IA visible par tous */}
+        {/* NOUVEAU — Assistant IA visible par tous */}
         <NavLink to="/chatbot"
           className={({ isActive }) => `sidebar-link ${isActive?'active':''}`}>
           <Bot size={17} className="flex-shrink-0 text-orange"/>
@@ -292,14 +288,6 @@ export default function Sidebar() {
         </button>
       </div>
 
-      {/* Bouton collapse */}
-      <button onClick={toggleSidebar}
-        className="absolute -right-3 top-20 w-6 h-6 bg-white dark:bg-gray-800
-          border border-gray-200 dark:border-gray-700 rounded-full
-          flex items-center justify-center text-gray-400 hover:text-orange
-          shadow-sm z-10">
-        {sidebarCollapsed ? <ChevronRight size={12}/> : <ChevronLeft size={12}/>}
-      </button>
     </aside>
   )
 }

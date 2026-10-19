@@ -201,7 +201,7 @@ export default function InformationsGenerales() {
     } catch { /* silencieux */ }
   }
 
-  // ── Ouvrir PDF — ✅ charge le détail complet avant impression ──
+  // ── Ouvrir PDF — charge le détail complet avant impression ──
   const openPrint = async (c) => {
     setLoadingPrint(true)
     try {
@@ -250,7 +250,7 @@ export default function InformationsGenerales() {
         <h1 className="page-title">
           <User size={22} className="text-orange"/> Informations Générales (GI)
         </h1>
-        <p className="page-sub">Gestion des clients leaders et leurs participants (RG 07, 08)</p>
+        <p className="page-sub">Gestion des clients leaders et leurs participants</p>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -354,7 +354,7 @@ export default function InformationsGenerales() {
                           {loadingPaxList ? <Spinner/> : <Users size={12}/>}
                         </button>
 
-                        {/* PDF GI — ✅ charge le détail complet */}
+                        {/* PDF GI — charge le détail complet */}
                         <button className="btn btn-xs"
                           style={{ background: '#1a1a1a', color: 'white' }}
                           onClick={() => openPrint(c)}
@@ -474,7 +474,7 @@ export default function InformationsGenerales() {
         {/* Vols */}
         {leaderTab === 'vol' && (
           <div>
-            <Alert type="info">ℹ️ Informations de vol communes pour tout le groupe.</Alert>
+            <Alert type="info">Informations de vol communes pour tout le groupe.</Alert>
             <p className="font-semibold text-sm text-brand-green mb-3 mt-3">
               Vol d'Arrivée
             </p>
@@ -681,7 +681,7 @@ export default function InformationsGenerales() {
                           {
                             onSuccess: () => {
                               refreshPaxList()
-                              toast.success('PAX supprimé', { icon: '⚠️' })
+                              toast.success('PAX supprimé')
                             },
                             onError: e => toast.error(e.message),
                           }
@@ -761,4 +761,4 @@ export default function InformationsGenerales() {
       </Modal>
     </Layout>
   )
-}
+}

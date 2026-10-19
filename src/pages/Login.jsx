@@ -167,7 +167,7 @@ export default function Login() {
                   <button
                     type="button"
                     className="lg-lien"
-                    onClick={() => toast('Contactez l\'Administration pour réinitialiser votre mot de passe.', { icon: '🔑' })}
+                    onClick={() => toast('Contactez l\'Administration pour réinitialiser votre mot de passe.')}
                   >
                     Mot de passe oublié ?
                   </button>

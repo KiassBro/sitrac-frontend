@@ -17,7 +17,7 @@ import { useAuthStore } from '../../store/authStore'
 import { satisfactionAPI } from '../../utils/satisfactionApi'
 import { fmtDate, fmtDateTime } from '../../utils/storage'
 
-const etoiles = (n) => (n == null ? '—' : `${(+n).toFixed(1)} ★`)
+const etoiles = (n) => (n == null ? '—' : `${(+n).toFixed(1)} / 5`)
 
 function Classement({ titre, lignes }) {
   return (

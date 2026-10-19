@@ -19,7 +19,7 @@ export default function Layout({ children, breadcrumb }) {
       >
         <Topbar breadcrumb={breadcrumb} sidebarWidth={w}/>
 
-        {/* ✅ paddingTop: 64px = hauteur h-16 de la Topbar fixed */}
+        {/* paddingTop: 64px = hauteur h-16 de la Topbar fixed */}
         <main
           className="flex-1 p-6"
           style={{ paddingTop: 'calc(64px + 1.5rem)' }}

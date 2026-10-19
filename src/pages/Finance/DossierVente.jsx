@@ -5,6 +5,8 @@ import Layout from '../../components/Layout/Layout'
 import { StatCard, Badge, Pagination, SearchInput } from '../../components/UI/index.jsx'
 import { ApiState } from '../../components/UI/ApiLoader.jsx'
 import { fmtDate, fmt } from '../../utils/storage'
+import { Check } from 'lucide-react'
+import { Lock, Info } from 'lucide-react'
 
 export default function DossierVenteFinance() {
   const { data: pcs     = [], isLoading, error, refetch } = useProgrammeClients()
@@ -31,7 +33,7 @@ export default function DossierVenteFinance() {
         <div className="flex items-center gap-3 mb-1">
           <h1 className="page-title"><Folder size={22} className="text-orange"/> Dossiers de Vente</h1>
           <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-brand-blue">
-            🔒 Lecture seule (RG 21)
+            <Lock size={11} className="inline -mt-px mr-1"/>Lecture seule
           </span>
         </div>
         <p className="page-sub">
@@ -131,12 +133,12 @@ export default function DossierVenteFinance() {
                     </td>
                     <td>
                       {p.a_cotation
-                        ? <Badge variant="active">✓ Oui</Badge>
+                        ? <Badge variant="active"><Check size={11} className="inline -mt-px mr-0.5"/>Oui</Badge>
                         : <Badge variant="inactive">Non</Badge>}
                     </td>
                     <td>
                       {p.a_facture_pro
-                        ? <Badge variant="active">✓ Oui</Badge>
+                        ? <Badge variant="active"><Check size={11} className="inline -mt-px mr-0.5"/>Oui</Badge>
                         : <Badge variant="inactive">Non</Badge>}
                     </td>
                   </tr>
@@ -151,7 +153,7 @@ export default function DossierVenteFinance() {
       {/* Note lecture seule */}
       <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
         <p className="text-sm text-brand-blue">
-          <strong>ℹ️ RG 21 :</strong> Le département Finance consulte les dossiers Sales en lecture seule.
+          <Info size={14} className="inline -mt-0.5 mr-1"/>Le département Finance consulte les dossiers Sales en lecture seule.
           Pour modifier un dossier, contactez le département Sales.
         </p>
       </div>

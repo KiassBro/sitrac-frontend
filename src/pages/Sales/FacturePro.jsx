@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { FileCheck, Plus, Pencil, Trash2, ArrowLeft, Save, AlertCircle, Printer, Lock, Unlock, HistoryIcon, Calculator } from 'lucide-react'
 import { useProgrammeClients } from '../../hooks/useApi'
@@ -14,6 +14,7 @@ import GenererDepuisCotation from '../../components/FacturePro/GenererDepuisCota
 import { Modal, Badge, SearchInput, StatCard } from '../../components/UI/index.jsx'
 import { ApiState } from '../../components/UI/ApiLoader.jsx'
 import { fmtDate, fmtDateTime, fmt, today } from '../../utils/storage'
+import { Check } from 'lucide-react'
 
 // ─── Modal impression Facture Pro ─────────────────────────────
 function FactureProPrintModal({ pc, fp, open, onClose }) {
@@ -351,9 +352,24 @@ function FactureProForm({ pc, onBack }) {
   const totalHT  = lignes.reduce((s, l) => s + (+l.nombre||1)*(+l.prix_unitaire||0), 0)
   const totalTTC = totalHT - (+remise||0)
 
+  // Nouvelle facture pro : la ligne du circuit est reprise du dossier
+  // (programme, dates, nombre de PAX, prix par personne) — rien à ressaisir.
+  const ligneDuDossier = () => ({
+    date: pc.date_debut || '',
+    service: `Circuit ${pc.programme_nom || ''} — du ${fmtDate(pc.date_debut)} au ${fmtDate(pc.date_fin)}`,
+    nombre: +pc.nb_pax || 1,
+    prix_unitaire: +pc.prix_vente || 0,
+  })
+  const [prerempli, setPrerempli] = useState(false)
+  useEffect(() => {
+    if (!isLoading && !fp && !prerempli && lignes.length === 0) {
+      setPrerempli(true); setLignes([ligneDuDossier()])
+    }
+  }, [isLoading, fp])
+
   const openAdd  = () => {
     setEditIdx(null)
-    reset({ date:'', service:'', nombre:1, prix_unitaire:'' })
+    reset({ date:pc.date_debut||'', service:'', nombre:+pc.nb_pax||1, prix_unitaire:'' })
     setLgModal(true)
   }
   const openEdit = (i) => {
@@ -397,8 +413,8 @@ function FactureProForm({ pc, onBack }) {
   const canDeverrouiller      = user?.dept === 'Administration'
 
   const validerFP = () => confirm({
-    icon:'🔒', type:'warning', title:'Valider la facture pro',
-    msg:"Une fois validée, cette facture pro ne pourra plus être modifiée directement (RG 15). "
+    icon:'verrouiller', type:'warning', title:'Valider la facture pro',
+    msg:"Une fois validée, cette facture pro ne pourra plus être modifiée directement. "
         +"Vous pourrez la repasser en brouillon vous-même si besoin, tant qu'elle n'est pas verrouillée.",
     confirmText:'Oui, valider',
     onConfirm: async () => {
@@ -410,7 +426,7 @@ function FactureProForm({ pc, onBack }) {
   })
 
   const repasserBrouillonFP = () => confirm({
-    icon:'✏️', type:'warning', title:'Repasser en brouillon',
+    icon:'modifier', type:'warning', title:'Repasser en brouillon',
     msg:"Cette facture pro redeviendra modifiable. Vous pourrez la valider de nouveau ensuite.",
     confirmText:'Oui, repasser en brouillon',
     onConfirm: async () => {
@@ -422,7 +438,7 @@ function FactureProForm({ pc, onBack }) {
   })
 
   const verrouillerFP = () => confirm({
-    icon:'🔐', type:'warning', title:'Verrouiller la facture pro',
+    icon:'cle', type:'warning', title:'Verrouiller la facture pro',
     msg:"Verrouillage de gestion définitif : plus personne (y compris Sales) ne pourra la "
         +"repasser en brouillon — seul un administrateur pourra la déverrouiller. Continuer ?",
     confirmText:'Oui, verrouiller',
@@ -435,7 +451,7 @@ function FactureProForm({ pc, onBack }) {
   })
 
   const deverrouillerFP = () => confirm({
-    icon:'🔓', type:'warning', title:'Déverrouiller la facture pro',
+    icon:'deverrouiller', type:'warning', title:'Déverrouiller la facture pro',
     msg:"La facture pro repassera au statut 'Validée' — Sales pourra alors la repasser en brouillon si besoin.",
     confirmText:'Oui, déverrouiller',
     onConfirm: async () => {
@@ -465,7 +481,7 @@ function FactureProForm({ pc, onBack }) {
             <Lock size={18} className="text-brand-green flex-shrink-0"/>
             <div className="text-sm text-brand-green">
               <strong>Facture pro verrouillée</strong> le {fmtDateTime(fp.verrouille_le)} par {fp.verrouille_par_nom || '—'}
-              {' '}(validée le {fmtDateTime(fp.valide_le)} par {fp.valide_par_nom || '—'}). Verrouillage définitif — RG 15.
+              {' '}(validée le {fmtDateTime(fp.valide_le)} par {fp.valide_par_nom || '—'}). Verrouillage définitif.
             </div>
           </div>
           {canDeverrouiller && (
@@ -481,7 +497,7 @@ function FactureProForm({ pc, onBack }) {
             <Lock size={18} className="text-brand-blue flex-shrink-0"/>
             <div className="text-sm text-brand-blue">
               <strong>Facture pro validée</strong> le {fmtDateTime(fp.valide_le)} par {fp.valide_par_nom || '—'}.
-              Elle ne peut plus être modifiée directement (RG 15).
+              Elle ne peut plus être modifiée directement.
             </div>
           </div>
           <div className="flex gap-2 flex-shrink-0">
@@ -502,7 +518,7 @@ function FactureProForm({ pc, onBack }) {
         <div className="card mb-4 p-4 flex items-center justify-between gap-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800">
           <div className="flex items-center gap-3 text-sm text-orange-700 dark:text-orange-400">
             <Lock size={18} className="flex-shrink-0"/>
-            Cette facture pro est en brouillon, encore modifiable. Validez-la une fois définitive (RG 15).
+            Cette facture pro est en brouillon, encore modifiable. Validez-la une fois définitive.
           </div>
           {canValiderOuBrouillon && (
             <button className="btn btn-primary btn-sm flex-shrink-0" disabled={lockBusy} onClick={validerFP}>
@@ -650,7 +666,7 @@ function FactureProForm({ pc, onBack }) {
         )}
         <button className="btn btn-success btn-lg" onClick={save}
           disabled={saveMut.isPending || isLocked}
-          title={isLocked ? `Facture pro ${fp?.statut === 'verrouille' ? 'verrouillée' : 'validée'} — modification bloquée (RG 15)` : ''}>
+          title={isLocked ? `Facture pro ${fp?.statut === 'verrouille' ? 'verrouillée' : 'validée'} — modification bloquée` : ''}>
           <Save size={15}/>
           {saveMut.isPending ? 'Enregistrement...' : 'Enregistrer'}
         </button>
@@ -768,7 +784,7 @@ export default function FacturePro() {
         <h1 className="page-title">
           <FileCheck size={22} className="text-orange"/> Facture Pro
         </h1>
-        <p className="page-sub">Factures proforma par dossier client (RG 13, 14, 15)</p>
+        <p className="page-sub">Factures proforma par dossier client</p>
       </div>
       <div className="grid grid-cols-3 gap-4 mb-6">
         <StatCard icon={FileCheck} value={pcs.length}
@@ -815,7 +831,7 @@ export default function FacturePro() {
                     <td className="text-sm text-gray-500">{fmtDate(p.date_vente)}</td>
                     <td>
                       {p.a_cotation
-                        ? <Badge variant="active">✓</Badge>
+                        ? <Badge variant="active"><Check size={11} className="inline -mt-px"/></Badge>
                         : <Badge variant="inactive">Non</Badge>}
                     </td>
                     <td className="text-center">

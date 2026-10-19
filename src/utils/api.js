@@ -165,6 +165,7 @@ export const authAPI = {
   login:          (login, password)  => api.post('/auth/login/', { login, password }),
   logout:         (refresh)          => api.post('/auth/logout/', { refresh }),
   me:             ()                 => api.get('/auth/me/'),
+  updateMe:       (data)             => api.patch('/auth/me/', data),
   changePassword: (data)             => api.post('/auth/change-password/', data),
   getUtilisateurs:(params = '')      => api.get(`/auth/utilisateurs/${params}`),
   createUser:     (data)             => api.post('/auth/utilisateurs/', data),

@@ -1,5 +1,19 @@
 import { useUiStore } from '../../store/uiStore'
 import { motion, AnimatePresence } from 'framer-motion'
+import { AlertTriangle, Trash2, Save, Lock, Unlock, KeyRound, LogOut, Pencil, Mail, CheckCircle2, Repeat, Ticket, ShieldCheck, Info } from 'lucide-react'
+
+// Icônes professionnelles (aucun emoji) : clé sémantique -> composant Lucide
+const ICONES = {
+  attention: AlertTriangle, supprimer: Trash2, enregistrer: Save, verrouiller: Lock,
+  deverrouiller: Unlock, cle: KeyRound, deconnexion: LogOut, modifier: Pencil, email: Mail,
+  valider: CheckCircle2, transfert: Repeat, voucher: Ticket, securite: ShieldCheck, info: Info,
+}
+const TEINTES = {
+  danger:  'bg-red-50 text-brand-red dark:bg-red-900/30',
+  warning: 'bg-orange-light text-orange dark:bg-orange/15',
+  success: 'bg-green-50 text-brand-green dark:bg-green-900/30',
+  info:    'bg-blue-50 text-brand-blue dark:bg-blue-900/30',
+}
 
 const TYPE_STYLES = {
   danger:  { btn: 'btn-danger',  ring: 'ring-red-200'   },
@@ -24,7 +38,14 @@ export default function ConfirmDialog() {
             initial={{ scale: .92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: .92, opacity: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
           >
-            <div className="text-5xl mb-4">{confirm.icon || '⚠️'}</div>
+            {(() => {
+              const Icone = ICONES[confirm.icon] || AlertTriangle
+              return (
+                <div className={`w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center ${TEINTES[confirm.type || 'danger'] || TEINTES.danger}`}>
+                  <Icone size={26} strokeWidth={2}/>
+                </div>
+              )
+            })()}
             <h3 className="font-title font-black text-lg text-gray-900 dark:text-white mb-2">
               {confirm.title || 'Confirmation'}
             </h3>

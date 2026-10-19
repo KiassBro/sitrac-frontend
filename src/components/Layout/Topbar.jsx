@@ -27,7 +27,7 @@ export default function Topbar({ breadcrumb = [], sidebarWidth = 260 }) {
   const handleLogout = () => {
     setDropOpen(false)
     showConfirm({
-      icon: '👋', type: 'danger', title: 'Déconnexion',
+      icon:'deconnexion', type: 'danger', title: 'Déconnexion',
       msg: 'Êtes-vous sûr de vouloir vous déconnecter de SITRAC ?',
       confirmText: 'Oui, déconnecter',
       onConfirm: () => { logout(); navigate('/login') }
@@ -36,13 +36,8 @@ export default function Topbar({ breadcrumb = [], sidebarWidth = 260 }) {
 
   return (
     /*
-     * ✅ FIX EDGE :
-     * - "fixed" au lieu de "sticky" — sticky est instable dans Edge
-     *   quand le parent est flex + min-h-screen
-     * - left dynamique = sidebarWidth pour s'aligner avec la sidebar
-     * - right: 0 pour couvrir tout le reste
-     * - transition uniquement sur left
-     * - Pas de transform ni will-change
+     * Barre du haut fixée à la fenêtre (la fenêtre est l'unique zone de
+     * défilement, voir index.css) ; elle commence après la sidebar.
      */
     <header
       className="

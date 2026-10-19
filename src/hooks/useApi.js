@@ -27,7 +27,7 @@ export function useDestinationMutations() {
     onError:   e  => toast.error(e.message) })
 
   const remove = useMutation({ mutationFn: salesAPI.deleteDest,
-    onSuccess: () => { inv(); toast.success('Destination supprimée', { icon:'⚠️' }) },
+    onSuccess: () => { inv(); toast.success('Destination supprimée') },
     onError:   e  => toast.error(e.message) })
 
   const toggle = useMutation({ mutationFn: salesAPI.toggleDest,
@@ -58,7 +58,7 @@ export function useProgrammeMutations() {
     onError:   e  => toast.error(e.message) })
 
   const remove = useMutation({ mutationFn: salesAPI.deleteProg,
-    onSuccess: () => { inv(); toast.success('Programme supprimé', { icon:'⚠️' }) },
+    onSuccess: () => { inv(); toast.success('Programme supprimé') },
     onError:   e  => toast.error(e.message) })
 
   const toggle = useMutation({ mutationFn: salesAPI.toggleProg,
@@ -89,7 +89,7 @@ export function useClientMutations() {
     onError:   e  => toast.error(e.message) })
 
   const remove  = useMutation({ mutationFn: salesAPI.deleteClient,
-    onSuccess: () => { inv(); toast.success('Client supprimé', { icon:'⚠️' }) },
+    onSuccess: () => { inv(); toast.success('Client supprimé') },
     onError:   e  => toast.error(e.message) })
 
   const addPax  = useMutation({ mutationFn: ({ clientId, data }) => salesAPI.addPax(clientId, data),
@@ -97,7 +97,7 @@ export function useClientMutations() {
     onError:   e  => toast.error(e.message) })
 
   const delPax  = useMutation({ mutationFn: ({ clientId, paxId }) => salesAPI.deletePax(clientId, paxId),
-    onSuccess: () => { inv(); toast.success('PAX supprimé', { icon:'⚠️' }) },
+    onSuccess: () => { inv(); toast.success('PAX supprimé') },
     onError:   e  => toast.error(e.message) })
 
   return { create, update, remove, addPax, delPax }
@@ -130,7 +130,7 @@ export function usePCMutations() {
     onError:   e  => toast.error(e.message) })
 
   const remove = useMutation({ mutationFn: salesAPI.deletePC,
-    onSuccess: () => { inv(); toast.success('Dossier supprimé', { icon:'⚠️' }) },
+    onSuccess: () => { inv(); toast.success('Dossier supprimé') },
     onError:   e  => toast.error(e.message) })
 
   return { create, update, remove }
@@ -179,7 +179,7 @@ export function useUtilisateurMutations() {
     onError:   e  => toast.error(e.message) })
 
   const remove = useMutation({ mutationFn: authAPI.deleteUser,
-    onSuccess: () => { inv(); toast.success('Utilisateur supprimé', { icon:'⚠️' }) },
+    onSuccess: () => { inv(); toast.success('Utilisateur supprimé') },
     onError:   e  => toast.error(e.message) })
 
   const toggle = useMutation({ mutationFn: authAPI.toggleUserActif,

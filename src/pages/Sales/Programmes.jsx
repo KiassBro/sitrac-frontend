@@ -6,6 +6,7 @@ import { useProgrammes, useProgrammeMutations, useDestinations } from '../../hoo
 import Layout from '../../components/Layout/Layout'
 import { Modal, Toggle, StatCard, Pagination, SearchInput, Badge } from '../../components/UI/index.jsx'
 import { ApiState } from '../../components/UI/ApiLoader.jsx'
+import { Info, X } from 'lucide-react'
 
 export default function Programmes() {
   const { data: progs = [], isLoading, error, refetch } = useProgrammes()
@@ -54,7 +55,7 @@ export default function Programmes() {
     <Layout breadcrumb={['SITRAC','Sales','Base de données','Programmes']}>
       <div className="mb-5">
         <h1 className="page-title"><Route size={22} className="text-orange"/> Programmes</h1>
-        <p className="page-sub">Produits touristiques à vendre aux clients (RG 04, 05, 06)</p>
+        <p className="page-sub">Produits touristiques à vendre aux clients</p>
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard icon={Route} value={progs.length}               label="Total"    color="orange"/>
@@ -120,7 +121,7 @@ export default function Programmes() {
           <div className="form-group"><label className="form-label">Description</label><input className="form-control" {...register('description')}/></div>
         </div>
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-sm text-brand-blue mb-4">
-          ℹ️ Double-cliquer sur une destination pour la sélectionner. Le code est généré automatiquement.
+          <Info size={14} className="inline-block align-[-2px] mr-1"/>Double-cliquer sur une destination pour la sélectionner. Le code est généré automatiquement.
         </div>
         <div className="grid grid-cols-2 gap-4 mb-4">
           {[['aller','Chemin Aller *'],['retour','Chemin Retour']].map(([side,label])=>(
@@ -143,7 +144,7 @@ export default function Programmes() {
                 {(side==='aller'?allerSel:retourSel).map((c,i)=>(
                   <span key={c} className="flex items-center gap-1 bg-orange-light border border-orange text-orange-dark text-xs font-bold px-2 py-0.5 rounded">
                     {i+1}. {c}
-                    <button className="text-brand-red ml-0.5" onClick={()=>toggleDest(c,side)}>✕</button>
+                    <button className="text-brand-red ml-0.5" onClick={()=>toggleDest(c,side)} aria-label="Retirer"><X size={11}/></button>
                   </span>
                 ))}
               </div>

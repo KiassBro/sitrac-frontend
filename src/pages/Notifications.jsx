@@ -10,6 +10,7 @@ import Layout from '../components/Layout/Layout'
 import { Modal, StatCard } from '../components/UI/index.jsx'
 import { ApiState } from '../components/UI/ApiLoader.jsx'
 import { timeAgo, fmtDateTime } from '../utils/storage'
+import { CheckCircle2, XCircle } from 'lucide-react'
 
 const CAT_META = {
   sales:   { label:'Sales',   bg:'bg-orange-100 dark:bg-orange-900/30', text:'text-orange-700 dark:text-orange-400' },
@@ -77,7 +78,7 @@ export default function Notifications() {
     onError: (e) => alert(`Échec : ${e.message}`),
   })
   const envoyerRelancesMaintenant = () => confirm({
-    icon:'📧', type:'warning', title:'Envoyer les relances maintenant',
+    icon:'email', type:'warning', title:'Envoyer les relances maintenant',
     msg:"Cela enverra immédiatement les emails de relance (échéance de paiement) et les digests de dossiers incomplets qui n'ont pas déjà été envoyés aujourd'hui. Continuer ?",
     confirmText:'Oui, envoyer',
     onConfirm: () => envoyerRelancesMut.mutate(false),
@@ -97,7 +98,7 @@ export default function Notifications() {
   const urgent  = all.filter(n=>n.prio==='high').length
 
   const markAll = () => confirm({
-    icon:'✅', type:'success', title:'Tout marquer comme lu', msg:'Marquer toutes les notifications comme lues ?', confirmText:'Oui, tout lire',
+    icon:'valider', type:'success', title:'Tout marquer comme lu', msg:'Marquer toutes les notifications comme lues ?', confirmText:'Oui, tout lire',
     onConfirm: () => markAllReadMut.mutate()
   })
 
@@ -107,7 +108,7 @@ export default function Notifications() {
     <Layout breadcrumb={['SITRAC','Notifications']}>
       <div className="mb-5">
         <h1 className="page-title"><Bell size={22} className="text-orange"/> Notifications</h1>
-        <p className="page-sub">Alertes calculées et persistées côté serveur (RG 28, 39, 40)</p>
+        <p className="page-sub">Les dossiers et actions qui demandent votre attention, mis à jour automatiquement</p>
       </div>
 
       <ApiState isLoading={isLoading} error={error} onRetry={refetch} loadingText="Chargement des notifications...">
@@ -153,7 +154,7 @@ export default function Notifications() {
                     <motion.div key={n.id} layout initial={{opacity:0,y:-6}} animate={{opacity:1,y:0}} exit={{opacity:0,scale:.96}}
                       onClick={()=>open(n)}
                       className={`card flex items-start gap-4 p-4 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all ${!n.read?'border-l-4 border-l-orange':'opacity-75 hover:opacity-100'}`}>
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-lg ${cat.bg} ${cat.text}`}>🔔</div>
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${cat.bg} ${cat.text}`}><Bell size={18}/></div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2 flex-wrap">
                           <h4 className={`font-bold text-sm ${!n.read?'text-gray-900 dark:text-white':'text-gray-500 dark:text-gray-400'}`}>{n.title}</h4>
@@ -190,8 +191,8 @@ export default function Notifications() {
             </button>
           </div>
           <div className="p-3 text-xs text-gray-500 border-b border-gray-100 dark:border-gray-800">
-            Envoi automatique quotidien (planifié côté serveur) : rappel de solde au client si le départ approche
-            (≤15 jours) et le paiement n'est pas soldé, et digest interne par département listant les dossiers incomplets (RG 28).
+            Chaque jour, SITRAC envoie automatiquement un rappel au client dont le départ approche (15 jours ou moins)
+            et dont le paiement n'est pas soldé, ainsi qu'un récapitulatif des dossiers incomplets à chaque département.
           </div>
           <div className="overflow-x-auto">
             <table className="tbl text-xs">
@@ -207,8 +208,8 @@ export default function Notifications() {
                       <td className="max-w-[220px] truncate" title={r.objet}>{r.objet}</td>
                       <td>
                         {r.reussi
-                          ? <span className="text-brand-green font-bold">✓ Envoyé</span>
-                          : <span className="text-brand-red font-bold" title={r.detail_erreur}>✗ Échec</span>}
+                          ? <span className="text-brand-green font-bold inline-flex items-center gap-1"><CheckCircle2 size={13}/>Envoyé</span>
+                          : <span className="text-brand-red font-bold inline-flex items-center gap-1" title={r.detail_erreur}><XCircle size={13}/>Échec</span>}
                       </td>
                     </tr>
                   ))

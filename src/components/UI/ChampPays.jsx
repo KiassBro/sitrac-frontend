@@ -1,3 +1,4 @@
+import CodePays from './CodePays'
 // ─────────────────────────────────────────────────────────────────
 // SITRAC — Champ « Pays » ou « Nationalité » : liste ISO avec recherche
 //
@@ -50,7 +51,7 @@ export default function ChampPays({
         >
           {choix ? (
             <>
-              <span className="text-base leading-none">{choix.drapeau}</span>
+              <CodePays code={choix.code}/>
               <span className="truncate text-gray-900 dark:text-white">{libelle(choix)}</span>
               {estNat && <span className="text-xs text-gray-400 truncate">· {choix.nom}</span>}
             </>
@@ -88,7 +89,7 @@ export default function ChampPays({
           selection={choix?.code}
           rendu={(p) => (
             <>
-              <span className="text-base leading-none">{p.drapeau}</span>
+              <CodePays code={p.code}/>
               <span className="truncate">{libelle(p)}</span>
               {estNat && <span className="text-xs text-gray-400 truncate">{p.nom}</span>}
             </>

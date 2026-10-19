@@ -15,7 +15,7 @@
  *   <ChampPrestataire form={{ register, watch, setValue }} name="hotels"
  *                     champMontant="dbl" categories={['hebergement']} />
  */
-import { useId, useMemo } from 'react'
+import { useEffect, useId, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Check, Info } from 'lucide-react'
 import { prestatairesAPI } from '../../utils/prestatairesApi'
@@ -27,7 +27,7 @@ export const normaliserNom = (t) => (t || '')
 const euro = (v) => `${Number(v || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`
 
 export default function ChampPrestataire({
-  form, name = 'prestataire', champMontant, categories, required = false,
+  form, name = 'prestataire', champMontant, categories, required = false, parPersonne = false, dateService,
   placeholder = 'Choisir dans le référentiel ou saisir un nom', className = 'form-control',
 }) {
   const idListe = useId()
@@ -50,9 +50,36 @@ export default function ChampPrestataire({
     || (p.alias || []).some((a) => normaliserNom(a) === saisie)) : null
   const estAlias = fiche && normaliserNom(fiche.nom) !== saisie
 
-  const appliquerPrix = (prix) => {
-    if (champMontant && setValue) setValue(champMontant, Number(prix), { shouldDirty: true })
+  // Prix d'un tarif ramené au bon montant :
+  // en cotation (parPersonne), une chambre double « par nuit (chambre) » est partagée par 2 personnes.
+  const prixApplicable = (t) => {
+    const prix = Number(t.prix || 0)
+    return parPersonne && t.unite_code === 'nuit' ? Math.round(prix / 2 * 100) / 100 : prix
   }
+  const appliquerPrix = (t) => {
+    if (champMontant && setValue) setValue(champMontant, prixApplicable(t), { shouldDirty: true })
+  }
+
+  // Tarif proposé d'office : celui valable à la date de la prestation (ou aujourd'hui),
+  // de préférence « toute l'année », sinon le premier de la fiche.
+  const tarifParDefaut = (f) => {
+    const jour = (dateService || new Date().toISOString()).slice(0, 10)
+    const valables = (f?.tarifs || []).filter((t) =>
+      (!t.date_debut || t.date_debut <= jour) && (!t.date_fin || t.date_fin >= jour))
+    const liste = valables.length ? valables : (f?.tarifs || [])
+    return liste.find((t) => t.saison === "Toute l'année") || liste[0] || null
+  }
+
+  // Dès qu'un prestataire du référentiel est choisi, son tarif est recopié
+  // automatiquement — sans écraser un montant déjà saisi.
+  const montantActuel = champMontant && watch ? watch(champMontant) : undefined
+  const ficheId = fiche?.id
+  useEffect(() => {
+    if (!ficheId || !champMontant || !setValue) return
+    if (Number(montantActuel || 0) !== 0) return
+    const t = tarifParDefaut(fiche)
+    if (t) appliquerPrix(t)
+  }, [ficheId])
 
   return (
     <div>
@@ -80,8 +107,9 @@ export default function ChampPrestataire({
               {fiche.tarifs.map((t) => (
                 <button key={t.id} type="button" title="Recopier ce prix"
                   className="px-2 py-0.5 rounded-full border border-gray-200 dark:border-gray-700 hover:border-orange hover:text-orange"
-                  onClick={() => appliquerPrix(t.prix)}>
+                  onClick={() => appliquerPrix(t)}>
                   {t.libelle} · {euro(t.prix)} {t.unite}{t.saison !== "Toute l'année" ? ` (${t.saison})` : ''}
+                  {parPersonne && t.unite_code === 'nuit' ? ` → ${euro(prixApplicable(t))} / pers.` : ''}
                 </button>
               ))}
             </div>

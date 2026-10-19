@@ -1,15 +1,16 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { FileCheck, Plus, Pencil, Trash2, ArrowLeft, Save, AlertCircle, Printer, Mail } from 'lucide-react'
 import { useProgrammeClients } from '../../hooks/useApi'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { financeAPI } from '../../utils/api'
+import { financeAPI, salesAPI } from '../../utils/api'
 import { useConfirm } from '../../hooks/useConfirm'
 import toast from 'react-hot-toast'
 import Layout from '../../components/Layout/Layout'
 import { Modal, Badge, SearchInput, StatCard } from '../../components/UI/index.jsx'
 import { ApiState } from '../../components/UI/ApiLoader.jsx'
 import { fmtDate, fmt, today } from '../../utils/storage'
+import { Check } from 'lucide-react'
 
 // ─── Modal impression Facture Définitive ──────────────────────
 function FactureDefPrintModal({ pc, fd, open, onClose }) {
@@ -349,9 +350,23 @@ function FactureDefForm({ pc, onBack }) {
   const totalHT  = lignes.reduce((s,l) => s + (+l.nombre||1)*(+l.prix_unitaire||0), 0)
   const totalTTC = totalHT - (+remise||0)
 
+  // RG 22 : la facture définitive remplace la facture pro — une nouvelle facture
+  // définitive reprend automatiquement ses lignes et sa remise (modifiables ensuite).
+  const [reprise, setReprise] = useState(false)
+  useEffect(() => {
+    if (isLoading || fd || reprise) return
+    setReprise(true)
+    salesAPI.getFacturePro(pc.id).then((fp) => {
+      if (!fp?.lignes?.length) return
+      setLignes(fp.lignes.map(({ date, service, nombre, prix_unitaire }) => ({ date, service, nombre, prix_unitaire })))
+      setRemise(fp.remise || 0)
+      toast.success('Lignes reprises de la facture pro')
+    }).catch(() => {})
+  }, [isLoading, fd])
+
   const openAdd  = () => {
     setEditIdx(null)
-    lgMethods.reset({ date:'', service:'', nombre:1, prix_unitaire:'' })
+    lgMethods.reset({ date:pc.date_debut||'', service:'', nombre:+pc.nb_pax||1, prix_unitaire:'' })
     setLgModal(true)
   }
   const openEdit = (i) => {
@@ -607,7 +622,7 @@ export default function FactureDefinitive() {
           <FileCheck size={22} className="text-orange"/> Facture Définitive
         </h1>
         <p className="page-sub">
-          Factures définitives remplaçant les factures proforma (RG 22, 27)
+          Factures définitives remplaçant les factures proforma
         </p>
       </div>
       <div className="grid grid-cols-3 gap-4 mb-6">
@@ -657,7 +672,7 @@ export default function FactureDefinitive() {
                     </td>
                     <td>
                       {p.a_facture_pro
-                        ? <Badge variant="active">✓</Badge>
+                        ? <Badge variant="active"><Check size={11} className="inline -mt-px"/></Badge>
                         : <Badge variant="inactive">Non</Badge>}
                     </td>
                     <td className="text-center">

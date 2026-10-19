@@ -12,6 +12,7 @@ import { ApiState } from '../../components/UI/ApiLoader.jsx'
 import { fmtDate, fmt, fmtAr, fmtDateTime } from '../../utils/storage'
 import { salesAPI } from '../../utils/api'
 import { tauxAPI } from '../../utils/tauxApi'
+import { libelleJour, datesDuVoyage } from '../../utils/jours'
 
 // ─── Modal Aperçu PDF Cotation ─────────────────────────────────
 function CotationPrintModal({ pc, data, open, onClose }) {
@@ -410,12 +411,36 @@ function CotationForm({ pc, onBack }) {
   const tot4 = tot3+(+fix.comm)+(+fix.fee)
   const tot5 = tot4+(+fix.flight)-(+fix.remise)
 
-  const openAddLigne  = () => { setEditLigne(null); reset({ jour:'',date:'',route:'',hotels:'',dbl:0,bf:0,lunch:0,diner:0,tsf:0,parking:0,guide:0,observation:'' }); setLgModal(true) }
+  // Nouvelle ligne : propose le premier jour du voyage qui n'a pas encore de ligne
+  const openAddLigne  = () => {
+    const prises = new Set(lignes.map(l => l.date))
+    const libre  = datesDuVoyage(pc.date_debut, pc.date_fin).find(d => !prises.has(d)) || ''
+    setEditLigne(null); reset({ jour:'',date:libre,route:'',hotels:'',dbl:0,bf:0,lunch:0,diner:0,tsf:0,parking:0,guide:0,observation:'' }); setLgModal(true)
+  }
+
+  // Une ligne vide par jour du voyage (dates et jours remplis automatiquement)
+  const genererJours = () => {
+    const prises = new Set(lignes.map(l => l.date))
+    const nouvelles = datesDuVoyage(pc.date_debut, pc.date_fin).filter(d => !prises.has(d)).map(d => ({
+      jour: libelleJour(d, pc.date_debut), date: d, route:'', hotels:'',
+      dbl:0, bf:0, lunch:0, diner:0, tsf:0, parking:0, guide:0, observation:'',
+    }))
+    if (!nouvelles.length) return
+    setLignes(prev => [...prev, ...nouvelles].sort((a,b) => (a.date||'9999').localeCompare(b.date||'9999')))
+  }
+  // Nouvelle cotation : les jours du voyage sont créés d'office
+  const [joursGeneres, setJoursGeneres] = useState(false)
+  useEffect(() => {
+    if (!isLoading && !cot && !joursGeneres && lignes.length === 0 && pc.date_debut && pc.date_fin) {
+      setJoursGeneres(true); genererJours()
+    }
+  }, [isLoading, cot])
   const openEditLigne = (i) => { setEditLigne(i); reset({ ...lignes[i] }); setLgModal(true) }
 
   const saveLigne = (data) => {
-    const lg = { ...data, dbl:+data.dbl||0,bf:+data.bf||0,lunch:+data.lunch||0,diner:+data.diner||0,tsf:+data.tsf||0,parking:+data.parking||0,guide:+data.guide||0,ordre:editLigne!==null?editLigne:lignes.length }
-    setLignes(prev => editLigne!==null ? prev.map((l,i)=>i===editLigne?lg:l) : [...prev,lg])
+    const lg = { ...data, jour: libelleJour(data.date, pc.date_debut) || data.jour || '', dbl:+data.dbl||0,bf:+data.bf||0,lunch:+data.lunch||0,diner:+data.diner||0,tsf:+data.tsf||0,parking:+data.parking||0,guide:+data.guide||0,ordre:editLigne!==null?editLigne:lignes.length }
+    setLignes(prev => (editLigne!==null ? prev.map((l,i)=>i===editLigne?lg:l) : [...prev,lg])
+      .sort((a,b) => (a.date||'9999').localeCompare(b.date||'9999')))
     setLgModal(false)
   }
   const deleteLigne = (i) => confirmDelete(`ligne ${i+1}`, () => setLignes(prev => prev.filter((_,j)=>j!==i)))
@@ -473,8 +498,8 @@ function CotationForm({ pc, onBack }) {
   const canDeverrouiller      = user?.dept === 'Administration'
 
   const validerCotation = () => confirm({
-    icon:'🔒', type:'warning', title:'Valider la cotation',
-    msg:"Une fois validée, cette cotation ne pourra plus être modifiée directement (RG 15). "
+    icon:'verrouiller', type:'warning', title:'Valider la cotation',
+    msg:"Une fois validée, cette cotation ne pourra plus être modifiée directement. "
         +"Vous pourrez la repasser en brouillon vous-même si besoin, tant qu'elle n'est pas verrouillée.",
     confirmText:'Oui, valider',
     onConfirm: async () => {
@@ -486,7 +511,7 @@ function CotationForm({ pc, onBack }) {
   })
 
   const repasserBrouillonCotation = () => confirm({
-    icon:'✏️', type:'warning', title:'Repasser en brouillon',
+    icon:'modifier', type:'warning', title:'Repasser en brouillon',
     msg:"Cette cotation redeviendra modifiable. Vous pourrez la valider de nouveau ensuite.",
     confirmText:'Oui, repasser en brouillon',
     onConfirm: async () => {
@@ -498,7 +523,7 @@ function CotationForm({ pc, onBack }) {
   })
 
   const verrouillerCotation = () => confirm({
-    icon:'🔐', type:'warning', title:'Verrouiller la cotation',
+    icon:'cle', type:'warning', title:'Verrouiller la cotation',
     msg:"Verrouillage de gestion définitif : plus personne (y compris Sales) ne pourra la "
         +"repasser en brouillon — seul un administrateur pourra la déverrouiller. Continuer ?",
     confirmText:'Oui, verrouiller',
@@ -511,7 +536,7 @@ function CotationForm({ pc, onBack }) {
   })
 
   const deverrouillerCotation = () => confirm({
-    icon:'🔓', type:'warning', title:'Déverrouiller la cotation',
+    icon:'deverrouiller', type:'warning', title:'Déverrouiller la cotation',
     msg:"La cotation repassera au statut 'Validée' — Sales pourra alors la repasser en brouillon si besoin.",
     confirmText:'Oui, déverrouiller',
     onConfirm: async () => {
@@ -540,7 +565,7 @@ function CotationForm({ pc, onBack }) {
             <Lock size={18} className="text-brand-green flex-shrink-0"/>
             <div className="text-sm text-brand-green">
               <strong>Cotation verrouillée</strong> le {fmtDateTime(cot.verrouille_le)} par {cot.verrouille_par_nom || '—'}
-              {' '}(validée le {fmtDateTime(cot.valide_le)} par {cot.valide_par_nom || '—'}). Verrouillage définitif — RG 15.
+              {' '}(validée le {fmtDateTime(cot.valide_le)} par {cot.valide_par_nom || '—'}). Verrouillage définitif.
             </div>
           </div>
           {canDeverrouiller && (
@@ -556,7 +581,7 @@ function CotationForm({ pc, onBack }) {
             <Lock size={18} className="text-brand-blue flex-shrink-0"/>
             <div className="text-sm text-brand-blue">
               <strong>Cotation validée</strong> le {fmtDateTime(cot.valide_le)} par {cot.valide_par_nom || '—'}.
-              Elle ne peut plus être modifiée directement (RG 15).
+              Elle ne peut plus être modifiée directement.
             </div>
           </div>
           <div className="flex gap-2 flex-shrink-0">
@@ -577,7 +602,7 @@ function CotationForm({ pc, onBack }) {
         <div className="card mb-4 p-4 flex items-center justify-between gap-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800">
           <div className="flex items-center gap-3 text-sm text-orange-700 dark:text-orange-400">
             <Lock size={18} className="flex-shrink-0"/>
-            Cette cotation est en brouillon, encore modifiable. Validez-la une fois définitive (RG 15).
+            Cette cotation est en brouillon, encore modifiable. Validez-la une fois définitive.
           </div>
           {canValiderOuBrouillon && (
             <button className="btn btn-primary btn-sm flex-shrink-0" disabled={lockBusy} onClick={validerCotation}>
@@ -610,13 +635,17 @@ function CotationForm({ pc, onBack }) {
         <div className="card-header">
           <h3 className="font-title font-bold text-sm text-gray-800 dark:text-gray-200">Lignes de Cotation</h3>
           <div className="flex gap-2">
+            <button className="btn btn-ghost btn-sm" disabled={isLocked || !pc.date_debut || !pc.date_fin} onClick={genererJours}
+              title="Ajoute une ligne pour chaque jour du voyage qui n'en a pas encore">
+              <Plus size={13}/> Jours du voyage
+            </button>
             <button className="btn btn-primary btn-sm" disabled={isLocked} onClick={openAddLigne}><Plus size={13}/> Ajout Manuel</button>
             <button className="btn btn-ghost btn-sm" disabled={!cot || csvBusy} onClick={exportCsv}
               title={!cot ? "Enregistrez d'abord la cotation pour pouvoir exporter" : ''}>
               <Download size={13}/> Exporter
             </button>
             <button className="btn btn-ghost btn-sm" disabled={!cot || csvBusy || isLocked} onClick={triggerImport}
-              title={!cot ? "Enregistrez d'abord la cotation pour pouvoir importer" : isLocked ? `Cotation ${cot?.statut === 'verrouille' ? 'verrouillée' : 'validée'} — modification bloquée (RG 15)` : ''}>
+              title={!cot ? "Enregistrez d'abord la cotation pour pouvoir importer" : isLocked ? `Cotation ${cot?.statut === 'verrouille' ? 'verrouillée' : 'validée'} — modification bloquée` : ''}>
               <Upload size={13}/> Importer
             </button>
             <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleImportFile}/>
@@ -634,7 +663,7 @@ function CotationForm({ pc, onBack }) {
                 ? <tr><td colSpan={13} className="py-6 text-center text-gray-400">Aucune ligne — cliquer sur "Ajout Manuel"</td></tr>
                 : lignes.map((lg,i)=>(
                   <tr key={i}>
-                    <td>{lg.jour||'—'}</td><td>{fmtDate(lg.date)}</td><td>{lg.route||'—'}</td><td>{lg.hotels||'—'}</td>
+                    <td className="whitespace-nowrap">{libelleJour(lg.date, pc.date_debut) || lg.jour || '—'}</td><td>{fmtDate(lg.date)}</td><td>{lg.route||'—'}</td><td>{lg.hotels||'—'}</td>
                     <td>{lg.dbl||0}</td><td>{lg.bf||0}</td><td>{lg.lunch||0}</td><td>{lg.diner||0}</td>
                     <td>{lg.tsf||0}</td><td>{lg.parking||0}</td><td>{lg.guide||0}</td>
                     <td className="max-w-[80px] truncate text-gray-400">{lg.observation||'—'}</td>
@@ -698,7 +727,7 @@ function CotationForm({ pc, onBack }) {
           </button>
         )}
         <button className="btn btn-success btn-lg" onClick={saveCot} disabled={save.isPending || isLocked}
-          title={isLocked ? `Cotation ${cot?.statut === 'verrouille' ? 'verrouillée' : 'validée'} — modification bloquée (RG 15)` : ''}>
+          title={isLocked ? `Cotation ${cot?.statut === 'verrouille' ? 'verrouillée' : 'validée'} — modification bloquée` : ''}>
           <Save size={16}/> {save.isPending?'Enregistrement...':'Tout Enregistrer'}
         </button>
       </div>
@@ -755,10 +784,12 @@ function CotationForm({ pc, onBack }) {
         footer={<><button className="btn btn-ghost" onClick={()=>setLgModal(false)}>Annuler</button><button className="btn btn-success" onClick={handleSubmit(saveLigne)}>Enregistrer</button></>}
       >
         <div className="grid grid-cols-2 gap-4">
-          <div className="form-group"><label className="form-label">Jour</label><input className="form-control" placeholder="Lun, Mar..." {...register('jour')}/></div>
-          <div className="form-group"><label className="form-label">Date</label><input type="date" className="form-control" {...register('date')}/></div>
+          <div className="form-group"><label className="form-label">Date</label>
+            <input type="date" className="form-control" min={pc.date_debut||undefined} max={pc.date_fin||undefined} {...register('date')}/></div>
+          <div className="form-group"><label className="form-label">Jour <span className="text-[10px] font-normal text-gray-400">(automatique)</span></label>
+            <input className="form-control bg-gray-50 dark:bg-gray-800" readOnly disabled value={libelleJour(watch('date'), pc.date_debut) || '—'}/></div>
           <div className="form-group"><label className="form-label">Route</label><input className="form-control" {...register('route')}/></div>
-          <div className="form-group"><label className="form-label">Hôtels</label><ChampPrestataire form={{ register, watch, setValue }} name="hotels" champMontant="dbl" categories={['hebergement']} placeholder="Choisir un hôtel du référentiel ou saisir"/></div>
+          <div className="form-group"><label className="form-label">Hôtels</label><ChampPrestataire form={{ register, watch, setValue }} name="hotels" champMontant="dbl" categories={['hebergement']} parPersonne dateService={watch('date')} placeholder="Choisir un hôtel du référentiel ou saisir"/></div>
         </div>
         <div className="grid grid-cols-4 lg:grid-cols-7 gap-3 mt-2">
           {[['dbl','DBL'],['bf','BF'],['lunch','L'],['diner','D'],['tsf','TSF'],['parking','Park'],['guide','Guide']].map(([k,l])=>(
@@ -797,7 +828,7 @@ export default function Cotation() {
     <Layout breadcrumb={['SITRAC','Sales','Dossier Client','Cotation']}>
       <div className="mb-5">
         <h1 className="page-title"><FileText size={22} className="text-orange"/> Cotation</h1>
-        <p className="page-sub">Cotations par dossier client (RG 10, 11, 12)</p>
+        <p className="page-sub">Cotations par dossier client</p>
       </div>
       <div className="card">
         <div className="card-header">

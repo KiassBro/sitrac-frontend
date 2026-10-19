@@ -1,3 +1,4 @@
+import CodePays from './CodePays'
 // ─────────────────────────────────────────────────────────────────
 // SITRAC — Champ téléphone international : indicatif (drapeau) + numéro
 //
@@ -127,7 +128,7 @@ export default function ChampTelephone({ value, onChange, paysDefaut = 'MG', pla
           aria-label="Indicatif du pays"
           title={pays ? `${pays.nom} (${pays.indicatif})` : 'Indicatif'}
         >
-          <span className="text-base leading-none">{pays?.drapeau || '🌐'}</span>
+          <CodePays code={pays?.code}/>
           <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">{pays?.indicatif || '+'}</span>
           <ChevronDown size={13} className="text-gray-400"/>
         </button>
@@ -166,7 +167,7 @@ export default function ChampTelephone({ value, onChange, paysDefaut = 'MG', pla
           selection={code}
           rendu={(p) => (
             <>
-              <span className="text-base leading-none">{p.drapeau}</span>
+              <CodePays code={p.code}/>
               <span className="truncate flex-1">{p.nom}</span>
               <span className="text-xs font-semibold text-gray-500">{p.indicatif}</span>
             </>

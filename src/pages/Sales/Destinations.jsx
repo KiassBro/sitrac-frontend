@@ -47,7 +47,7 @@ export default function Destinations() {
     <Layout breadcrumb={['SITRAC','Sales','Base de données','Destinations']}>
       <div className="mb-5">
         <h1 className="page-title"><MapPin size={22} className="text-orange"/> Destinations</h1>
-        <p className="page-sub">Gestion des destinations géographiques disponibles (RG 03, 37)</p>
+        <p className="page-sub">Gestion des destinations géographiques disponibles</p>
       </div>
       <div className="grid grid-cols-3 gap-4 mb-6">
         <StatCard icon={MapPin} value={dests.length}           label="Total"     color="orange"/>

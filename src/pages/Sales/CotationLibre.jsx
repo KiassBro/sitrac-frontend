@@ -11,6 +11,8 @@ import Layout from '../../components/Layout/Layout'
 import { Modal, StatCard } from '../../components/UI/index.jsx'
 import { ApiState } from '../../components/UI/ApiLoader.jsx'
 import { fmt, fmtAr, fmtDate } from '../../utils/storage'
+import { libelleJour } from '../../utils/jours'
+import ChampPrestataire from '../../components/Prestataires/ChampPrestataire'
 
 function FormCotation({ initial, onSave, onCancel, isSaving }) {
   const { confirmDelete, confirmSave } = useConfirm()
@@ -37,7 +39,7 @@ function FormCotation({ initial, onSave, onCancel, isSaving }) {
   const [lgModal, setLgModal] = useState(false)
   const [editIdx, setEditIdx] = useState(null)
 
-  const { register, handleSubmit, reset } = useForm()
+  const { register, handleSubmit, reset, watch, setValue } = useForm()
 
   // RG 35 : une nouvelle cotation libre part du taux de référence du jour (mis à jour automatiquement)
   const { data: tauxRef } = useQuery({ queryKey: ['taux-actuel'], queryFn: tauxAPI.actuel, enabled: !initial?.id })
@@ -62,6 +64,7 @@ function FormCotation({ initial, onSave, onCancel, isSaving }) {
   const saveLg   = handleSubmit(data => {
     const lg = {
       ...data,
+      jour: libelleJour(data.date, info.date) || data.jour || '',
       dbl: +data.dbl||0, bf: +data.bf||0, lunch: +data.lunch||0,
       diner: +data.diner||0, tsf: +data.tsf||0, parking: +data.parking||0, guide: +data.guide||0,
     }
@@ -263,14 +266,15 @@ function FormCotation({ initial, onSave, onCancel, isSaving }) {
           <button className="btn btn-success" onClick={saveLg}>Enregistrer</button>
         </>}>
         <div className="grid grid-cols-2 gap-4">
-          <div className="form-group"><label className="form-label">Jour</label>
-            <input className="form-control" placeholder="Lun, Mar..." {...register('jour')} /></div>
           <div className="form-group"><label className="form-label">Date</label>
             <input type="date" className="form-control" {...register('date')} /></div>
+          <div className="form-group"><label className="form-label">Jour <span className="text-[10px] font-normal text-gray-400">(automatique)</span></label>
+            <input className="form-control bg-gray-50 dark:bg-gray-800" readOnly disabled value={libelleJour(watch('date'), info.date) || '—'} /></div>
           <div className="form-group"><label className="form-label">Route</label>
             <input className="form-control" {...register('route')} /></div>
           <div className="form-group"><label className="form-label">Hôtels</label>
-            <input className="form-control" {...register('hotels')} /></div>
+            <ChampPrestataire form={{ register, watch, setValue }} name="hotels" champMontant="dbl" categories={['hebergement']} parPersonne dateService={watch('date')}
+              placeholder="Choisir un hôtel du référentiel ou saisir" /></div>
         </div>
         <div className="grid grid-cols-4 lg:grid-cols-7 gap-3 mt-2">
           {[['dbl','DBL'],['bf','BF'],['lunch','L'],['diner','D'],
@@ -326,7 +330,7 @@ export default function CotationLibre() {
     mutationFn: salesAPI.deleteCotLibre,
     onSuccess: () => {
       qc.invalidateQueries(['cotations-libres'])
-      toast.success('Cotation supprimée', { icon: '⚠️' })
+      toast.success('Cotation supprimée')
     },
     onError: e => toast.error(e.message),
   })
@@ -370,7 +374,7 @@ export default function CotationLibre() {
     <Layout breadcrumb={['SITRAC','Sales','Cotation Libre']}>
       <div className="mb-5">
         <h1 className="page-title"><Calculator size={22} className="text-orange" /> Cotation Libre</h1>
-        <p className="page-sub">Cotations non liées à un dossier client — usage ponctuel (RG 10, 11, 12)</p>
+        <p className="page-sub">Cotations non liées à un dossier client — usage ponctuel</p>
       </div>
 
       <div className="grid grid-cols-3 gap-4 mb-6">

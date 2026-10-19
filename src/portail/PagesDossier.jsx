@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, BookOpenText, CreditCard, Download, FileText, Landmark } from 'lucide-react'
+import { ArrowLeft, BookOpenText, CheckCircle2, Clock, CreditCard, Download, FileText, Info, Landmark, ShieldCheck, XCircle } from 'lucide-react'
 import { portailAPI } from './api'
 import { formatDate, formatMontant, useT } from './i18n'
 import { Bloc, Bouton, Champ, champClasse, Chargement, Itineraire, Message, PortailLayout } from './composants'
@@ -310,6 +310,57 @@ export function Voyageurs() {
 }
 
 /* ── Retour de paiement et page de simulation ─────────────────── */
+const TONS = {
+  ok:      { Icone: CheckCircle2,  classe: 'bg-rt-canopy/10 text-rt-canopy' },
+  attente: { Icone: Clock,         classe: 'bg-rt-ocre-lt text-rt-ocre' },
+  info:    { Icone: Info,          classe: 'bg-rt-mist text-rt-canopy' },
+  echec:   { Icone: XCircle,       classe: 'bg-rt-laterite/10 text-rt-laterite' },
+}
+
+/** En-tête d'état (icône + titre + texte) commun aux pages de retour de paiement. */
+function EtatPaiement({ ton, titre, children }) {
+  const { Icone, classe } = TONS[ton]
+  return (
+    <div className="flex flex-col items-center text-center mb-6">
+      <span className={`inline-flex items-center justify-center w-14 h-14 rounded-full mb-4 ${classe}`}>
+        <Icone size={28} aria-hidden />
+      </span>
+      <h1 className="font-title font-bold text-2xl mb-2">{titre}</h1>
+      {children && <p className="text-rt-stone max-w-md">{children}</p>}
+    </div>
+  )
+}
+
+/** Récapitulatif du paiement : montant, voyage, dossier et référence. */
+function RecapPaiement({ tx, langue }) {
+  const fr = langue === 'fr'
+  const lignes = [
+    [fr ? 'Montant' : 'Amount', <strong key="m" className="text-base">{formatMontant(tx.montant, langue, tx.devise)}</strong>],
+    [fr ? 'Voyage' : 'Trip', tx.programme],
+    [fr ? 'Dossier' : 'Booking', `n° ${tx.dossier}`],
+    [fr ? 'Référence' : 'Reference', <span key="r" className="font-mono text-xs">{String(tx.uuid).slice(0, 8).toUpperCase()}</span>],
+  ]
+  return (
+    <dl className="border border-rt-line rounded-md divide-y divide-rt-line text-sm mb-6">
+      {lignes.map(([k, v]) => (
+        <div key={k} className="flex justify-between gap-4 px-4 py-2.5">
+          <dt className="text-rt-stone">{k}</dt><dd className="text-right min-w-0 break-words">{v}</dd>
+        </div>
+      ))}
+    </dl>
+  )
+}
+
+function MentionSecurite({ fr }) {
+  return (
+    <p className="flex items-center justify-center gap-1.5 text-xs text-rt-stone mt-6">
+      <ShieldCheck size={14} className="text-rt-canopy" aria-hidden />
+      {fr ? 'Paiement sécurisé — vos données de carte ne transitent jamais par nos serveurs.'
+          : 'Secure payment — your card details never go through our servers.'}
+    </p>
+  )
+}
+
 export function PaiementRetour() {
   const { uuid } = useParams()
   const [recherche] = useSearchParams()
@@ -331,49 +382,60 @@ export function PaiementRetour() {
     }
   }, [tx, essais, enAttente, annuleParClient])
 
+  const versEspace = (variante) => tx && (
+    <Link to={`/portail/dossiers/${tx.dossier}`}>
+      <Bouton variante={variante}><ArrowLeft size={15} aria-hidden />{t('acceder_espace')}</Bouton>
+    </Link>
+  )
+
   return (
     <PortailLayout connecte={false}>
-      <Bloc>
-        {!tx ? <Chargement /> : tx.statut === 'payee' ? (
-          <>
-            <h1 className="font-title font-bold text-2xl mb-2">{t('pay_retour_ok')}</h1>
-            <p className="mb-5">{formatMontant(tx.montant, langue, tx.devise)} — {tx.programme}</p>
-            <Link to={`/portail/dossiers/${tx.dossier}`}><Bouton>{t('acceder_espace')}</Bouton></Link>
-          </>
-        ) : enAttente && annuleParClient ? (
-          <>
-            <h1 className="font-title font-bold text-2xl mb-2">{fr ? 'Paiement non finalisé' : 'Payment not completed'}</h1>
-            <p className="mb-5 text-rt-stone">
-              {fr ? "Aucun montant n'a été débité. Vous pouvez reprendre le paiement maintenant ou plus tard depuis votre espace voyage."
-                  : 'No money was taken. You can resume the payment now or later from your travel space.'}
-            </p>
-            <div className="flex flex-wrap gap-3">
-              {tx.url_paiement && (
-                <a href={tx.url_paiement}><Bouton><CreditCard size={15} aria-hidden />{fr ? 'Reprendre le paiement' : 'Resume payment'}</Bouton></a>
-              )}
-              <Link to={`/portail/dossiers/${tx.dossier}`}><Bouton variante="secondaire">{t('acceder_espace')}</Bouton></Link>
-            </div>
-          </>
-        ) : enAttente && essais >= 10 ? (
-          <>
-            <h1 className="font-title font-bold text-2xl mb-2">{fr ? 'Confirmation en cours' : 'Confirmation in progress'}</h1>
-            <p className="mb-5 text-rt-stone">
-              {fr ? 'Votre banque ou le service de paiement met un peu de temps à confirmer. Vous recevrez un email dès que le paiement sera validé.'
-                  : 'Your bank or the payment service is taking a little longer to confirm. You will receive an email as soon as the payment is validated.'}
-            </p>
-            <Link to={`/portail/dossiers/${tx.dossier}`}><Bouton>{t('acceder_espace')}</Bouton></Link>
-          </>
-        ) : enAttente ? (
-          <Chargement />
-        ) : (
-          <>
-            <h1 className="font-title font-bold text-2xl mb-2">{t('pay_retour_echec')}</h1>
-            <p className="mb-5 text-rt-stone">{t('pay_retour_echec_suite')}</p>
-            <Link to={`/portail/dossiers/${tx.dossier}`}><Bouton>{t('acceder_espace')}</Bouton></Link>
-          </>
-        )}
-        {enAttente && !annuleParClient && essais < 10 && <p className="text-sm text-rt-stone">{t('pay_retour_attente')}</p>}
-      </Bloc>
+      <div className="max-w-xl mx-auto">
+        <Bloc>
+          {!tx ? <Chargement /> : tx.statut === 'payee' ? (
+            <>
+              <EtatPaiement ton="ok" titre={t('pay_retour_ok')}>
+                {fr ? 'Un reçu vous est envoyé par email. Votre espace voyage est à jour.'
+                    : 'A receipt is on its way to your inbox. Your travel space is up to date.'}
+              </EtatPaiement>
+              <RecapPaiement tx={tx} langue={langue} />
+              <div className="flex justify-center">{versEspace()}</div>
+            </>
+          ) : enAttente && annuleParClient ? (
+            <>
+              <EtatPaiement ton="info" titre={fr ? 'Paiement non finalisé' : 'Payment not completed'}>
+                {fr ? "Aucun montant n'a été débité. Vous pouvez reprendre le paiement maintenant ou plus tard depuis votre espace voyage."
+                    : 'No money was taken. You can resume the payment now or later from your travel space.'}
+              </EtatPaiement>
+              <RecapPaiement tx={tx} langue={langue} />
+              <div className="flex flex-wrap justify-center gap-3">
+                {tx.url_paiement && (
+                  <a href={tx.url_paiement}><Bouton><CreditCard size={15} aria-hidden />{fr ? 'Reprendre le paiement' : 'Resume payment'}</Bouton></a>
+                )}
+                {versEspace('secondaire')}
+              </div>
+            </>
+          ) : enAttente && essais >= 10 ? (
+            <>
+              <EtatPaiement ton="attente" titre={fr ? 'Confirmation en cours' : 'Confirmation in progress'}>
+                {fr ? 'Votre banque ou le service de paiement met un peu de temps à confirmer. Vous recevrez un email dès que le paiement sera validé.'
+                    : 'Your bank or the payment service is taking a little longer to confirm. You will receive an email as soon as the payment is validated.'}
+              </EtatPaiement>
+              <RecapPaiement tx={tx} langue={langue} />
+              <div className="flex justify-center">{versEspace()}</div>
+            </>
+          ) : enAttente ? (
+            <div className="py-6"><Chargement /><p className="text-sm text-rt-stone text-center mt-3">{t('pay_retour_attente')}</p></div>
+          ) : (
+            <>
+              <EtatPaiement ton="echec" titre={t('pay_retour_echec')}>{t('pay_retour_echec_suite')}</EtatPaiement>
+              <RecapPaiement tx={tx} langue={langue} />
+              <div className="flex justify-center">{versEspace()}</div>
+            </>
+          )}
+          <MentionSecurite fr={fr} />
+        </Bloc>
+      </div>
     </PortailLayout>
   )
 }
@@ -390,20 +452,21 @@ export function PaiementSimulation() {
   }
   return (
     <PortailLayout connecte={false}>
-      <Bloc titre={t('pay_simulation')}>
-        <Message type="attention">{t('pay_simulation_aide')}</Message>
-        {tx && (
-          <>
-            <p className="text-3xl font-title font-bold my-5">{formatMontant(tx.montant, langue, tx.devise)}</p>
-            <p className="mb-5 text-rt-stone">{tx.programme}</p>
-            <div className="flex flex-wrap gap-3">
-              <Bouton onClick={() => simuler('payee')} chargement={enCours}>{t('simuler_ok')}</Bouton>
-              <Bouton variante="danger" onClick={() => simuler('echouee')} disabled={enCours}>{t('simuler_echec')}</Bouton>
+      <div className="max-w-xl mx-auto">
+        <Bloc titre={t('pay_simulation')}>
+          <Message type="attention">{t('pay_simulation_aide')}</Message>
+          {tx && (
+            <div className="mt-5">
+              <RecapPaiement tx={tx} langue={langue} />
+              <div className="flex flex-wrap gap-3">
+                <Bouton onClick={() => simuler('payee')} chargement={enCours}><CheckCircle2 size={15} aria-hidden />{t('simuler_ok')}</Bouton>
+                <Bouton variante="danger" onClick={() => simuler('echouee')} disabled={enCours}><XCircle size={15} aria-hidden />{t('simuler_echec')}</Bouton>
+              </div>
             </div>
-          </>
-        )}
-        {tx === false && <Message type="erreur">{t('erreur')}</Message>}
-      </Bloc>
+          )}
+          {tx === false && <Message type="erreur">{t('erreur')}</Message>}
+        </Bloc>
+      </div>
     </PortailLayout>
   )
 }

@@ -132,23 +132,45 @@
 .dark .tbl td { @apply text-gray-300; }
 
 
-/* ✅ Fix Edge : forcer le scroll sur html/body uniquement */
-html, body {
-  height: 100%;
-  overflow-x: hidden;
+/* ─── Défilement : UNE seule zone de défilement, la fenêtre ───────────
+   Cause du décalage de la navigation sous Microsoft Edge :
+   l'ancienne règle « html, body { height:100%; overflow-x:hidden } »
+   transformait <body> en zone de défilement imbriquée (la fenêtre ne défilait
+   plus : window.scrollY restait à 0). Les éléments position:fixed/sticky
+   (sidebar, navbar, menus de l'espace client) étaient alors repeints à
+   chaque défilement au lieu d'être composés par le navigateur ; avec les
+   barres de défilement superposées (« Fluent ») d'Edge, qui apparaissent
+   au passage de la souris, ils se décalaient puis revenaient en place.
+   Correction : la fenêtre redevient l'unique zone de défilement ;
+   « overflow-x: clip » coupe le débordement horizontal SANS créer de zone
+   de défilement, et « scrollbar-gutter » réserve la place de la barre. */
+html {
+  scrollbar-gutter: stable;
 }
-
-/* ✅ Fix Edge : s'assurer que #root ne crée pas de nouveau contexte */
+body {
+  overflow-x: clip;
+}
 #root {
-  min-height: 100%;
-  /* NE PAS mettre overflow: hidden ici */
+  min-height: 100vh;
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
 }
 
-/* ✅ Fix : supprimer animate-fade-in si elle utilise transform */
+/* Animation d'apparition sans transform (n'affecte pas le positionnement) */
 @keyframes fadeIn {
   from { opacity: 0; }   /* ← pas de translateY ici */
   to   { opacity: 1; }
 }
 .animate-fade-in {
   animation: fadeIn 0.2s ease-out;
+}
+
+/* Edge : suppression du défilement « élastique » (rebond).
+   En haut ou en bas de page, Edge tirait toute la page et laissait voir une
+   bande blanche : la sidebar et la barre de l'espace client semblaient
+   décollées, et l'en-tête transparent de l'accueil devenait blanc sur blanc.
+   Chrome sous Windows n'a pas ce rebond. */
+html, body {
+  overscroll-behavior-y: none;
 }

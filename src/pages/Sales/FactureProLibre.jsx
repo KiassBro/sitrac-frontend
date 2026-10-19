@@ -281,7 +281,7 @@ export default function FactureProLibre() {
     mutationFn: salesAPI.deleteFPLibre,
     onSuccess: () => {
       qc.invalidateQueries(['fp-libres'])
-      toast.success('Facture supprimée', { icon: '⚠️' })
+      toast.success('Facture supprimée')
     },
     onError: e => toast.error(e.message),
   })
@@ -325,7 +325,7 @@ export default function FactureProLibre() {
     <Layout breadcrumb={['SITRAC','Sales','Facture Pro Libre']}>
       <div className="mb-5">
         <h1 className="page-title"><FileText size={22} className="text-orange" /> Facture Pro Libre</h1>
-        <p className="page-sub">Factures proforma non liées à un dossier client — usage ponctuel (RG 13, 14, 15)</p>
+        <p className="page-sub">Factures proforma non liées à un dossier client — usage ponctuel</p>
       </div>
 
       <div className="grid grid-cols-3 gap-4 mb-6">

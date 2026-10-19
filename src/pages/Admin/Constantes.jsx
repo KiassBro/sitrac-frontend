@@ -11,15 +11,16 @@ import Layout from '../../components/Layout/Layout'
 import { Modal, StatCard } from '../../components/UI/index.jsx'
 import { ApiState } from '../../components/UI/ApiLoader.jsx'
 import { fmtDate } from '../../utils/storage'
+import { Info, Coins, Building2, Settings2 } from 'lucide-react'
 
 const CATEGORIES = {
-  'taux_change':    '💱 Financier',
-  'tva_rate':       '💱 Financier',
-  'devise_locale':  '💱 Financier',
-  'devise_intl':    '💱 Financier',
-  'nom_societe':    '🏢 Société',
-  'adresse':        '🏢 Société',
-  'version_app':    '⚙️ Système',
+  'taux_change':    'Financier',
+  'tva_rate':       'Financier',
+  'devise_locale':  'Financier',
+  'devise_intl':    'Financier',
+  'nom_societe':    'Société',
+  'adresse':        'Société',
+  'version_app':    'Système',
 }
 
 export default function Constantes() {
@@ -47,7 +48,7 @@ export default function Constantes() {
   }
 
   const grouped = constantes.reduce((acc, c) => {
-    const cat = CATEGORIES[c.cle] || '⚙️ Système'
+    const cat = CATEGORIES[c.cle] || 'Système'
     if (!acc[cat]) acc[cat] = []
     acc[cat].push(c)
     return acc
@@ -72,8 +73,8 @@ export default function Constantes() {
   const actualiser = useMutation({
     mutationFn: (forcer) => tauxAPI.actualiser(forcer),
     onSuccess: (r) => {
-      if (r.statut === 'inchange') toast(r.detail, { icon: 'ℹ️' })
-      else if (r.alerte) toast(`${r.detail} — variation importante, à vérifier`, { icon: '⚠️', duration: 6000 })
+      if (r.statut === 'inchange') toast(r.detail)
+      else if (r.alerte) toast(`${r.detail} — variation importante, à vérifier`, { duration: 6000 })
       else toast.success(r.detail)
       qc.invalidateQueries(['taux-change-historique']); qc.invalidateQueries(['constantes']); refetchActuel()
     },
@@ -85,7 +86,7 @@ export default function Constantes() {
     <Layout breadcrumb={['SITRAC','Administration','Constantes Système']}>
       <div className="mb-5">
         <h1 className="page-title"><Settings size={22} className="text-orange"/> Constantes Système</h1>
-        <p className="page-sub">Paramètres globaux configurables du système SITRAC (RG 35)</p>
+        <p className="page-sub">Paramètres globaux configurables du système SITRAC</p>
       </div>
 
       <div className="grid grid-cols-3 gap-4 mb-6">
@@ -98,7 +99,9 @@ export default function Constantes() {
         {Object.entries(grouped).map(([cat, items]) => (
           <div key={cat} className="card mb-5">
             <div className="card-header">
-              <h3 className="font-title font-bold text-sm text-gray-800 dark:text-gray-200">{cat}</h3>
+              <h3 className="font-title font-bold text-sm text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                {(() => { const Ic = { Financier: Coins, 'Société': Building2 }[cat] || Settings2; return <Ic size={15} className="text-orange"/> })()}
+                {cat}</h3>
               <span className="text-xs text-gray-400">{items.length} paramètre{items.length>1?'s':''}</span>
             </div>
             <div className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -211,7 +214,7 @@ export default function Constantes() {
         </div>
         {editItem && (
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-xs text-brand-blue">
-            ℹ️ La clé ne peut pas être modifiée. Pour changer la clé, supprimez et recréez la constante.
+            <Info size={14} className="inline-block align-[-2px] mr-1"/>La clé ne peut pas être modifiée. Pour changer la clé, supprimez et recréez la constante.
           </div>
         )}
       </Modal>

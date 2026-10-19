@@ -60,8 +60,22 @@ export default function ProgrammeClient() {
     setModal(true)
   }
 
+  // ─── Choix du client : reprend ce qui est déjà connu dans sa fiche (GI) ──
+  //     nombre de PAX, date d'arrivée et date de départ (vols) — rien n'est ressaisi
+  const regClient = register('client', { required: 'Sélectionnez un client' })
+  const handleClientChange = (e) => {
+    regClient.onChange(e)
+    const c = clients.find(x => x.id === +e.target.value)
+    if (!c) return
+    setValue('nb_pax', c.nb_pax || 1, { shouldDirty: true })
+    if (c.vol_arr_date) setValue('date_debut', c.vol_arr_date, { shouldDirty: true })
+    if (c.vol_dep_date) setValue('date_fin',   c.vol_dep_date, { shouldDirty: true })
+  }
+
   // ─── Changement de programme : remplit le prix + affiche les infos ──
+  const regProg = register('programme', { required: 'Sélectionnez un programme' })
   const handleProgChange = (e) => {
+    regProg.onChange(e)
     const id   = +e.target.value
     const prog = progs.find(p => p.id === id)
     setSelectedProg(prog || null)
@@ -96,7 +110,7 @@ export default function ProgrammeClient() {
     <Layout breadcrumb={['SITRAC','Sales','Dossier Client','Programme Client']}>
       <div className="mb-5">
         <h1 className="page-title"><Car size={22} className="text-orange"/> Programme Client</h1>
-        <p className="page-sub">Dossiers de vente — programmes vendus aux clients (RG 08, 09)</p>
+        <p className="page-sub">Dossiers de vente — programmes vendus aux clients</p>
       </div>
 
       {/* Stats */}
@@ -149,9 +163,9 @@ export default function ProgrammeClient() {
                     <td>{p.a_cotation ? <Badge variant="active">Oui</Badge> : <Badge variant="inactive">Non</Badge>}</td>
                     <td className="text-center">
                       <button className="btn btn-ghost btn-xs mr-1.5" disabled={p.annule} onClick={() => openEdit(p)}
-                        title={p.annule ? 'Dossier annulé — non modifiable (RG 34)' : 'Modifier'}><Pencil size={12}/></button>
+                        title={p.annule ? 'Dossier annulé — non modifiable' : 'Modifier'}><Pencil size={12}/></button>
                       <button className="btn btn-ghost btn-xs mr-1.5" onClick={() => setAnnulPC(p)}
-                        title={p.annule ? "Voir l'annulation" : 'Annuler le dossier (RG 34)'}>
+                        title={p.annule ? "Voir l'annulation" : 'Annuler le dossier'}>
                         <Ban size={12} className={p.annule ? 'text-brand-red' : ''}/>
                       </button>
                       <button className="btn btn-danger btn-xs" onClick={() =>
@@ -195,7 +209,7 @@ export default function ProgrammeClient() {
         {/* Alerte programme désactivé */}
         {selectedProg && !selectedProg.actif && (
           <Alert type="danger">
-            ⚠️ Ce programme est désactivé — impossible de créer un dossier (RG 06)
+            Ce programme est désactivé — impossible de créer un dossier
           </Alert>
         )}
 
@@ -204,7 +218,8 @@ export default function ProgrammeClient() {
           <label className="form-label">Client Leader <span className="form-req">*</span></label>
           <select
             className={`form-control ${errors.client ? 'border-brand-red' : ''}`}
-            {...register('client', { required: 'Sélectionnez un client' })}
+            {...regClient}
+            onChange={handleClientChange}
           >
             <option value="">-- Sélectionner un client --</option>
             {clients.map(c => (
@@ -221,7 +236,7 @@ export default function ProgrammeClient() {
           <label className="form-label">Programme <span className="form-req">*</span></label>
           <select
             className={`form-control ${errors.programme ? 'border-brand-red' : ''}`}
-            {...register('programme', { required: 'Sélectionnez un programme' })}
+            {...regProg}
             onChange={handleProgChange}
           >
             <option value="">-- Sélectionner un programme --</option>
@@ -283,8 +298,8 @@ export default function ProgrammeClient() {
           </div>
         )}
 
-        {/* Nb PAX + Prix */}
-        <div className="grid grid-cols-2 gap-4">
+        {/* Nb PAX + Prix + Total */}
+        <div className="grid grid-cols-3 gap-4">
           <div className="form-group">
             <label className="form-label">Nb PAX <span className="form-req">*</span></label>
             <input
@@ -292,6 +307,7 @@ export default function ProgrammeClient() {
               className={`form-control ${errors.nb_pax ? 'border-brand-red' : ''}`}
               {...register('nb_pax', { required: true, min: 1, valueAsNumber: true })}
             />
+            <p className="form-hint">Repris de la fiche du client.</p>
           </div>
           <div className="form-group">
             <label className="form-label">
@@ -310,13 +326,15 @@ export default function ProgrammeClient() {
             />
             {selectedProg && (
               <p className="form-hint text-orange">
-                ✓ Prix automatiquement rempli depuis le programme — vous pouvez le modifier
+                Prix automatiquement rempli depuis le programme — vous pouvez le modifier
               </p>
             )}
-            <p className="form-hint">
-              Total du dossier : <strong>{((+watch('prix_vente')||0) * (+watch('nb_pax')||1)).toLocaleString('fr-FR')} €</strong>
-              {' '}({+watch('nb_pax')||1} PAX)
-            </p>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Total du dossier (€)</label>
+            <input className="form-control bg-gray-50 dark:bg-gray-800 font-bold" readOnly disabled
+              value={((+watch('prix_vente')||0) * (+watch('nb_pax')||1)).toLocaleString('fr-FR', { minimumFractionDigits: 2 })}/>
+            <p className="form-hint">Calculé : prix par personne × {+watch('nb_pax')||1} PAX.</p>
           </div>
         </div>
 

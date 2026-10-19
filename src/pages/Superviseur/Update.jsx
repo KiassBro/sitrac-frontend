@@ -41,7 +41,7 @@ export default function SuperviseurUpdate() {
       <div className="mb-5">
         <h1 className="page-title"><Edit size={22} className="text-orange"/> Journal des Modifications (UPDATE)</h1>
         <p className="page-sub flex items-center gap-2">
-          Toutes les modifications d'enregistrements dans la base de données (RG 30)
+          Toutes les modifications d'enregistrements dans la base de données
           <span className="flex items-center gap-1.5 text-xs font-bold text-brand-green">
             <span className="w-2 h-2 rounded-full bg-brand-green animate-pulse inline-block"/>
             Surveillance active
@@ -75,7 +75,7 @@ export default function SuperviseurUpdate() {
             value={fTable} onChange={e=>{setFTable(e.target.value);setPage(1)}}/>
           <input type="date" className="form-control py-1.5 text-xs w-40"
             value={fDate} onChange={e=>{setFDate(e.target.value);setPage(1)}}/>
-          <input className="form-control py-1.5 text-xs w-48" placeholder="🔍 Rechercher..."
+          <input className="form-control py-1.5 text-xs w-48" placeholder="Rechercher..."
             value={search} onChange={e=>{setSearch(e.target.value);setPage(1)}}/>
           <button className="btn btn-ghost btn-sm" onClick={()=>{setFTable('');setFDate('');setSearch('');setPage(1)}}>
             Réinitialiser
@@ -97,7 +97,7 @@ export default function SuperviseurUpdate() {
                 <span className="text-brand-purple flex-shrink-0">{l.user_login}</span>
                 <span className="text-gray-500 dark:text-gray-400 flex-1 truncate">{l.detail}</span>
                 {l.donnees_avant && (
-                  <span className="text-[10px] text-gray-300 flex-shrink-0">📝 modifié</span>
+                  <span className="text-[10px] text-gray-300 flex-shrink-0">modifié</span>
                 )}
               </div>
             ))}

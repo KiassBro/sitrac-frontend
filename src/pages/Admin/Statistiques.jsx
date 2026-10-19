@@ -7,6 +7,7 @@ import { superviseurAPI } from '../../utils/api'
 import Layout from '../../components/Layout/Layout'
 import { StatCard } from '../../components/UI/index.jsx'
 import { ApiState } from '../../components/UI/ApiLoader.jsx'
+import { BarChart3 as IcoBarres, PieChart as IcoCamembert, ClipboardList as IcoIndicateurs, TrendingUp as IcoTendance, Trophy as IcoTrophee } from 'lucide-react'
 
 const MONTHS = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc']
 const DEPT_COLORS = { Sales:'#F5A623', Booking:'#27AE60', Finance:'#2980B9', Administration:'#8E44AD', Superviseur:'#2C3E50' }
@@ -65,7 +66,7 @@ export default function Statistiques() {
     <Layout breadcrumb={['SITRAC','Administration','Statistiques']}>
       <div className="mb-5">
         <h1 className="page-title"><BarChart2 size={22} className="text-orange"/> Statistiques Système</h1>
-        <p className="page-sub">Bilans d'activité — données réelles depuis le backend (RG 38)</p>
+        <p className="page-sub">Bilans d'activité de l'agence, calculés sur les données enregistrées</p>
       </div>
 
       {/* KPIs */}
@@ -126,7 +127,7 @@ export default function Statistiques() {
         {/* Ligne 1 : activité par département + camembert actions */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
           <div className="card">
-            <div className="card-header"><h3 className="font-title font-bold text-sm">📊 Activité par Département</h3></div>
+            <div className="card-header"><h3 className="font-title font-bold text-sm flex items-center gap-2"><IcoBarres size={15} className="text-orange shrink-0"/>Activité par Département</h3></div>
             <div className="card-body">
               {deptData.length === 0
                 ? <div className="h-40 flex items-center justify-center text-sm text-gray-400">Aucune donnée</div>
@@ -147,7 +148,7 @@ export default function Statistiques() {
           </div>
 
           <div className="card">
-            <div className="card-header"><h3 className="font-title font-bold text-sm">🥧 Répartition INSERT/UPDATE/DELETE</h3></div>
+            <div className="card-header"><h3 className="font-title font-bold text-sm flex items-center gap-2"><IcoCamembert size={15} className="text-orange shrink-0"/>Répartition INSERT/UPDATE/DELETE</h3></div>
             <div className="card-body flex items-center gap-8 flex-wrap">
               {actionData.length === 0
                 ? <div className="h-40 flex items-center justify-center w-full text-sm text-gray-400">Aucune donnée</div>
@@ -181,7 +182,7 @@ export default function Statistiques() {
 
         {/* Ligne 2 : activité mensuelle */}
         <div className="card mb-5">
-          <div className="card-header"><h3 className="font-title font-bold text-sm">📈 Activité Mensuelle</h3></div>
+          <div className="card-header"><h3 className="font-title font-bold text-sm flex items-center gap-2"><IcoTendance size={15} className="text-orange shrink-0"/>Activité Mensuelle</h3></div>
           <div className="card-body">
             <ResponsiveContainer width="100%" height={160}>
               <LineChart data={monthData} margin={{top:5,right:10,bottom:5,left:-20}}>
@@ -199,7 +200,7 @@ export default function Statistiques() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
           {/* Stats métier */}
           <div className="card">
-            <div className="card-header"><h3 className="font-title font-bold text-sm">📋 Indicateurs Métier</h3></div>
+            <div className="card-header"><h3 className="font-title font-bold text-sm flex items-center gap-2"><IcoIndicateurs size={15} className="text-orange shrink-0"/>Indicateurs Métier</h3></div>
             <div className="card-body space-y-4">
               {[
                 { label:'Destinations actives',     val:dests.filter(d=>d.actif).length,    max:dests.length,        color:'#F5A623' },
@@ -226,7 +227,7 @@ export default function Statistiques() {
 
           {/* Top utilisateurs */}
           <div className="card">
-            <div className="card-header"><h3 className="font-title font-bold text-sm">🏆 Top Utilisateurs (actions)</h3></div>
+            <div className="card-header"><h3 className="font-title font-bold text-sm flex items-center gap-2"><IcoTrophee size={15} className="text-orange shrink-0"/>Top Utilisateurs (actions)</h3></div>
             <div className="card-body">
               {userActivity.length === 0
                 ? <div className="text-center py-8 text-sm text-gray-400">Aucune donnée d'activité</div>

@@ -1,9 +1,9 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { ClipboardList, Plus, Pencil, Trash2, ArrowLeft, Save, AlertCircle, Download, Upload, Ticket, BookOpenText } from 'lucide-react'
 import { useProgrammeClients } from '../../hooks/useApi'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { bookingAPI, downloadFile } from '../../utils/api'
+import { bookingAPI, salesAPI, downloadFile } from '../../utils/api'
 import { useConfirm } from '../../hooks/useConfirm'
 import toast from 'react-hot-toast'
 import Layout from '../../components/Layout/Layout'
@@ -13,6 +13,7 @@ import ChampRessource from '../../components/Ressources/ChampRessource'
 import { Modal, Badge, SearchInput, StatCard, Alert } from '../../components/UI/index.jsx'
 import { ApiState } from '../../components/UI/ApiLoader.jsx'
 import { fmtDate, today } from '../../utils/storage'
+import { Check } from 'lucide-react'
 
 const ETATS = ['NOK','OK_PHONE','OK_MAIL']
 const ETAT_LABEL = { NOK:'Non confirmé', OK_PHONE:'OK Téléphone', OK_MAIL:'OK Mail' }
@@ -53,6 +54,50 @@ function BrieffingForm({ pc, onBack }) {
     })
   }
 
+  // Lignes reprises de la cotation : une ligne par jour avec hôtel
+  // (date, itinéraire = route, prestataire = hôtel, tarif = DBL par personne × PAX).
+  const lignesDepuisCotation = (cot) => (cot?.lignes || [])
+    .filter(l => (l.hotels || '').trim())
+    .map(l => ({
+      date: l.date || '', itineraire: l.route || '', prestataire: l.hotels.trim(), etat: 'NOK',
+      observation: l.observation || '', facture_type: 'Proforma',
+      tarif_paiement: Math.round((+l.dbl || 0) * (+pc.nb_pax || 1) * 100) / 100, zone_paiement: '',
+    }))
+  const reprendreCotation = async (silencieux = false) => {
+    try {
+      const cot = await salesAPI.getCotation(pc.id)
+      const nouvelles = lignesDepuisCotation(cot)
+      if (!nouvelles.length) { if (!silencieux) toast('Aucun hôtel dans la cotation'); return }
+      setLignes(prev => {
+        const deja = new Set(prev.map(l => `${l.date}|${(l.prestataire||'').toLowerCase()}`))
+        return [...prev, ...nouvelles.filter(l => !deja.has(`${l.date}|${l.prestataire.toLowerCase()}`))]
+          .sort((a,b) => (a.date||'9999').localeCompare(b.date||'9999'))
+      })
+      toast.success(`${nouvelles.length} ligne(s) reprise(s) de la cotation`)
+    } catch { if (!silencieux) toast.error('Cotation introuvable pour ce dossier') }
+  }
+
+  // Nouveau brieffing : tout ce qui est déjà connu est prérempli
+  // (PAX et date du dossier, vols de la fiche client, hôtels de la cotation).
+  const [prerempli, setPrerempli] = useState(false)
+  useEffect(() => {
+    if (isLoading || brf || prerempli) return
+    setPrerempli(true)
+    formMethods.reset({
+      responsable_finance: '', chauffeur: '', guide: '', voiture: '', vols_internationaux: '',
+      date_programme: pc.date_debut || '',
+      nb_pax: +pc.nb_pax || 1, nb_adultes: +pc.nb_pax || 1, nb_enfants: 0, nb_bebes: 0,
+    })
+    salesAPI.getClient(pc.client).then((c) => {
+      const vol = (sens, dep, dest, date, cie) => (dep || dest)
+        ? `${sens} : ${dep || '?'} → ${dest || '?'}${date ? ` le ${fmtDate(date)}` : ''}${cie ? ` (${cie})` : ''}` : ''
+      const vols = [vol('Arrivée', c.vol_arr_dep, c.vol_arr_dest, c.vol_arr_date, c.vol_arr_cie),
+                    vol('Départ', c.vol_dep_dep, c.vol_dep_dest, c.vol_dep_date, c.vol_dep_cie)].filter(Boolean).join('\n')
+      if (vols) formMethods.setValue('vols_internationaux', vols)
+    }).catch(() => {})
+    if (lignes.length === 0) reprendreCotation(true)
+  }, [isLoading, brf])
+
   const saveMut = useMutation({
     mutationFn: (data) => brf
       ? bookingAPI.updateBrieffing(brf.id, data)
@@ -65,7 +110,7 @@ function BrieffingForm({ pc, onBack }) {
     confirmSave(() => saveMut.mutate({ ...data, programme_client: pc.id, lignes: lignes.map((l,i)=>({...l,ordre:i})) }))
   })
 
-  const openAddLg  = () => { setEditIdx(null); lgMethods.reset({ date:'', itineraire:'', prestataire:'', etat:'NOK', observation:'', facture_type:'Proforma', tarif_paiement:0, zone_paiement:'' }); setLgModal(true) }
+  const openAddLg  = () => { setEditIdx(null); lgMethods.reset({ date:pc.date_debut||'', itineraire:'', prestataire:'', etat:'NOK', observation:'', facture_type:'Proforma', tarif_paiement:0, zone_paiement:'' }); setLgModal(true) }
   const openEditLg = (i) => { setEditIdx(i); lgMethods.reset({...lignes[i]}); setLgModal(true) }
   const saveLg = lgMethods.handleSubmit(data => {
     const lg = { ...data, tarif_paiement: +data.tarif_paiement||0 }
@@ -178,6 +223,8 @@ function BrieffingForm({ pc, onBack }) {
               <h3 className="font-title font-bold text-sm text-gray-800 dark:text-gray-200">Prestataires & Services</h3>
               <div className="flex items-center gap-3">
                 <span className="text-xs text-gray-400">{ok}/{lignes.length} confirmés</span>
+                <button className="btn btn-ghost btn-sm" onClick={() => reprendreCotation(false)}
+                  title="Ajoute les hôtels de la cotation qui ne sont pas encore dans le brieffing"><Plus size={13}/> Reprendre la cotation</button>
                 <button className="btn btn-primary btn-sm" onClick={openAddLg}><Plus size={13}/> Ajouter</button>
                 <button className="btn btn-ghost btn-sm" disabled={!brf || csvBusy} onClick={exportCsv}
                   title={!brf ? "Enregistrez d'abord le brieffing pour pouvoir exporter" : ''}>
@@ -239,7 +286,7 @@ function BrieffingForm({ pc, onBack }) {
         <div className="grid grid-cols-2 gap-4">
           <div className="form-group"><label className="form-label">Date</label><input type="date" className="form-control" {...lgMethods.register('date')}/></div>
           <div className="form-group"><label className="form-label">Itinéraire</label><input className="form-control" {...lgMethods.register('itineraire')}/></div>
-          <div className="form-group col-span-2"><label className="form-label">Prestataire <span className="form-req">*</span></label><ChampPrestataire form={lgMethods} name="prestataire" champMontant="tarif_paiement" required/></div>
+          <div className="form-group col-span-2"><label className="form-label">Prestataire <span className="form-req">*</span></label><ChampPrestataire form={lgMethods} name="prestataire" champMontant="tarif_paiement" dateService={lgMethods.watch("date")} required/></div>
           <div className="form-group"><label className="form-label">État</label>
             <select className="form-control" {...lgMethods.register('etat')}>
               {ETATS.map(e=><option key={e} value={e}>{ETAT_LABEL[e]}</option>)}
@@ -278,7 +325,7 @@ export default function Brieffings() {
     <Layout breadcrumb={['SITRAC','Booking','Dossier Booking','Brieffing']}>
       <div className="mb-5">
         <h1 className="page-title"><ClipboardList size={22} className="text-orange"/> Brieffing</h1>
-        <p className="page-sub">Gestion des brieffings — prestataires, hébergements, transports (RG 16, 17, 18)</p>
+        <p className="page-sub">Gestion des brieffings — prestataires, hébergements, transports</p>
       </div>
       <div className="grid grid-cols-3 gap-4 mb-6">
         <StatCard icon={ClipboardList} value={eligible.length} label="Dossiers éligibles" color="orange"/>
@@ -286,7 +333,7 @@ export default function Brieffings() {
         <StatCard icon={ClipboardList} value={pcs.filter(p=>!p.a_facture_pro).length} label="En attente FP" color="red"/>
       </div>
       {pcs.length > 0 && eligible.length === 0 && (
-        <Alert type="warning">⚠️ Aucun dossier avec une Facture Pro validée. La Facture Pro doit être créée et validée par le département Sales (RG 16).</Alert>
+        <Alert type="warning">Aucun dossier avec une Facture Pro validée. La Facture Pro doit être créée et validée par le département Sales.</Alert>
       )}
       <div className="card">
         <div className="card-header">
@@ -306,7 +353,7 @@ export default function Brieffings() {
                       <td><Badge variant="info">{p.programme_nom}</Badge></td>
                       <td>{p.nb_pax}</td>
                       <td className="text-xs text-gray-500">{fmtDate(p.date_debut)} → {fmtDate(p.date_fin)}</td>
-                      <td><Badge variant="active">✓ Validée</Badge></td>
+                      <td><Badge variant="active"><Check size={11} className="inline -mt-px mr-0.5"/>Validée</Badge></td>
                       <td className="text-center">
                         <button className="btn btn-primary btn-sm" onClick={()=>setCurPC(p)}>
                           <ClipboardList size={13}/> Gérer

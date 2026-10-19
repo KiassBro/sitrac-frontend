@@ -14,12 +14,9 @@ import { financeAPI } from '../utils/api'
 import Layout from '../components/Layout/Layout'
 import MaJournee from '../components/Tableau/MaJournee'
 import { StatCard } from '../components/UI/index.jsx'
-import {
-  MapPin, Route, Users, FileText, FolderOpen,
-  ClipboardList, Database, PlusCircle, Edit, Trash2,
-  Shield, BarChart2, TrendingUp, CreditCard, AlertCircle
-} from 'lucide-react'
+import { MapPin, Route, Users, FileText, FolderOpen, ClipboardList, Database, PlusCircle, Edit, Trash2, Shield, BarChart2, TrendingUp, CreditCard, AlertCircle } from 'lucide-react'
 import { fmt } from '../utils/storage'
+import { Zap as IcoZap, BarChart3 as IcoBarChart3, PieChart as IcoPieChart, TrendingUp as IcoTrendingUp } from 'lucide-react'
 
 const MONTHS = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc']
 
@@ -398,7 +395,7 @@ export default function Dashboard() {
         <div className="relative z-10 flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="font-title font-black text-2xl text-white mb-1">
-              Bienvenue, {user.name} 👋
+              Bienvenue, {user.name}
             </h1>
             <p className="text-white/80 text-sm">
               Département : <strong className="text-white">{user.dept}</strong>
@@ -430,7 +427,7 @@ export default function Dashboard() {
         <div className="card mb-6">
           <div className="card-header">
             <h3 className="font-title font-bold text-sm text-gray-800 dark:text-gray-200">
-              🚀 Accès rapides
+              <IcoZap size={15} className="text-orange shrink-0"/>Accès rapides
             </h3>
           </div>
           <div className="card-body">
@@ -470,7 +467,7 @@ export default function Dashboard() {
           <div className="card">
             <div className="card-header">
               <h3 className="font-title font-bold text-sm text-gray-800 dark:text-gray-200">
-                📊 Activité par Département
+                <IcoBarChart3 size={15} className="text-orange shrink-0"/>Activité par Département
               </h3>
             </div>
             <div className="card-body">
@@ -488,7 +485,7 @@ export default function Dashboard() {
           <div className="card">
             <div className="card-header">
               <h3 className="font-title font-bold text-sm text-gray-800 dark:text-gray-200">
-                🥧 Répartition des Actions
+                <IcoPieChart size={15} className="text-orange shrink-0"/>Répartition des Actions
               </h3>
             </div>
             <div className="card-body flex items-center gap-6 flex-wrap">
@@ -521,7 +518,7 @@ export default function Dashboard() {
         <div className="card">
           <div className="card-header">
             <h3 className="font-title font-bold text-sm text-gray-800 dark:text-gray-200">
-              📈 Activité Mensuelle
+              <IcoTrendingUp size={15} className="text-orange shrink-0"/>Activité Mensuelle
             </h3>
           </div>
           <div className="card-body">

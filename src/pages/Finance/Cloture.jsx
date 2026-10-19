@@ -1,9 +1,9 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { FolderOpen, Plus, Pencil, Trash2, ArrowLeft, Save, Printer } from 'lucide-react'
 import { useProgrammeClients } from '../../hooks/useApi'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { financeAPI } from '../../utils/api'
+import { financeAPI, bookingAPI } from '../../utils/api'
 import { useConfirm } from '../../hooks/useConfirm'
 import toast from 'react-hot-toast'
 import Layout from '../../components/Layout/Layout'
@@ -11,6 +11,7 @@ import ChampPrestataire from '../../components/Prestataires/ChampPrestataire'
 import { Modal, Badge, SearchInput, StatCard } from '../../components/UI/index.jsx'
 import { ApiState } from '../../components/UI/ApiLoader.jsx'
 import { fmtDate, fmt, today } from '../../utils/storage'
+import { AlertTriangle } from 'lucide-react'
 
 // ─── Modal Rapport de Clôture PDF ─────────────────────────────
 function CloturePrintModal({ pc, data, open, onClose }) {
@@ -410,6 +411,34 @@ function ClotureForm({ pc, onBack }) {
   const totalDep = lignes.reduce((s,l) => s + (+l.montant||0), 0)
   const benefice = (+totRec||0) - totalDep
 
+  // Nouvelle clôture : les dépenses réelles sont reprises des reçus des
+  // prestataires (RG 26) ; à défaut, de la provision du Booking.
+  const [reprise, setReprise] = useState(false)
+  const reprendreDepenses = async (silencieux = false) => {
+    try {
+      const recus = await financeAPI.getRecus(`?programme_client=${pc.id}`).then(r => r.results || r)
+      let nouvelles = (recus || []).map(r => ({
+        description: r.description || `Règlement ${r.prestataire}`, prestataire: r.prestataire,
+        montant: +r.montant || 0, date: r.date_recu || '',
+      }))
+      let source = 'des reçus'
+      if (!nouvelles.length) {
+        const prov = await bookingAPI.getProvisions(`?programme_client=${pc.id}`).then(r => (r.results||r)[0] || null)
+        nouvelles = (prov?.lignes || []).map(l => ({ description: l.description, prestataire: l.prestataire || '',
+          montant: +l.montant || 0, date: l.date || '' }))
+        source = 'de la provision'
+      }
+      if (!nouvelles.length) { if (!silencieux) toast('Aucun reçu ni provision pour ce dossier'); return }
+      setLignes(nouvelles)
+      toast.success(`${nouvelles.length} dépense(s) reprise(s) ${source}`)
+    } catch { if (!silencieux) toast.error('Reprise impossible') }
+  }
+  useEffect(() => {
+    if (isLoading || cloture || reprise) return
+    setReprise(true)
+    if (lignes.length === 0) reprendreDepenses(true)
+  }, [isLoading, cloture])
+
   const openAdd  = () => {
     setEditIdx(null)
     lgMethods.reset({ description:'', prestataire:'', montant:'', date:'' })
@@ -432,14 +461,13 @@ function ClotureForm({ pc, onBack }) {
   const deleteLg = (i) => {
     confirmDelete(`ligne ${i+1}`, () => {
       setLignes(prev => prev.filter((_,j)=>j!==i))
-      toast.success('Ligne supprimée — cliquer "Clôturer" pour confirmer',
-        { icon:'⚠️', duration:3000 })
+      toast.success('Ligne supprimée — cliquer "Clôturer" pour confirmer', { duration:3000 })
     })
   }
 
   const save = () => {
     if (+totRec <= 0) {
-      toast.error('Aucun paiement enregistré pour ce dossier : la clôture est impossible (RG 24)')
+      toast.error('Aucun paiement enregistré pour ce dossier : la clôture est impossible')
       return
     }
     confirmSave(() => saveMut.mutate({
@@ -521,7 +549,7 @@ function ClotureForm({ pc, onBack }) {
               </label>
               <input type="number" className="form-control bg-gray-50 dark:bg-gray-800"
                 value={totRec.toFixed(2)} readOnly disabled/>
-              <p className="form-hint">Calculé automatiquement à partir des paiements enregistrés (RG 24).</p>
+              <p className="form-hint">Calculé automatiquement à partir des paiements enregistrés.</p>
             </div>
             <div className="form-group mb-0">
               <label className="form-label">Observation</label>
@@ -539,9 +567,15 @@ function ClotureForm({ pc, onBack }) {
           <h3 className="font-title font-bold text-sm text-gray-800 dark:text-gray-200">
             Lignes de Dépenses Réelles
           </h3>
-          <button className="btn btn-primary btn-sm" onClick={openAdd}>
-            <Plus size={13}/> Ajouter
-          </button>
+          <div className="flex gap-2">
+            <button className="btn btn-ghost btn-sm" onClick={() => reprendreDepenses(false)}
+              title="Remplace les lignes par les reçus des prestataires (ou, à défaut, la provision)">
+              <Plus size={13}/> Reprendre les reçus
+            </button>
+            <button className="btn btn-primary btn-sm" onClick={openAdd}>
+              <Plus size={13}/> Ajouter
+            </button>
+          </div>
         </div>
         {isLoading ? (
           <div className="p-8 text-center text-gray-400">Chargement...</div>
@@ -613,7 +647,7 @@ function ClotureForm({ pc, onBack }) {
 
       <div className="p-3 mb-4 bg-orange/10 border border-orange/30 rounded-xl
         text-sm text-orange flex items-center gap-2">
-        <span>⚠️</span>
+        <AlertTriangle size={15} className="flex-shrink-0"/>
         <span>Les dépenses sont sauvegardées en cliquant
           sur <strong>"Clôturer le dossier"</strong>.</span>
       </div>
@@ -708,7 +742,7 @@ export default function Cloture() {
         <h1 className="page-title">
           <FolderOpen size={22} className="text-orange"/> Clôture
         </h1>
-        <p className="page-sub">Clôture financière des dossiers clients (RG 24)</p>
+        <p className="page-sub">Clôture financière des dossiers clients</p>
       </div>
       <div className="grid grid-cols-3 gap-4 mb-6">
         <StatCard icon={FolderOpen} value={eligible.length}

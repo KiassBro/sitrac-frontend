@@ -41,7 +41,7 @@ export default function SuperviseurInsert() {
       <div className="mb-5">
         <h1 className="page-title"><PlusCircle size={22} className="text-brand-green"/> Journal des Insertions (INSERT)</h1>
         <p className="page-sub flex items-center gap-2">
-          Toutes les créations d'enregistrements dans la base de données (RG 30)
+          Toutes les créations d'enregistrements dans la base de données
           <span className="flex items-center gap-1.5 text-xs font-bold text-brand-green">
             <span className="w-2 h-2 rounded-full bg-brand-green animate-pulse inline-block"/>
             Surveillance active
@@ -78,7 +78,7 @@ export default function SuperviseurInsert() {
             value={fTable} onChange={e=>{setFTable(e.target.value);setPage(1)}}/>
           <input type="date" className="form-control py-1.5 text-xs w-40"
             value={fDate} onChange={e=>{setFDate(e.target.value);setPage(1)}}/>
-          <input className="form-control py-1.5 text-xs w-48" placeholder="🔍 Rechercher..."
+          <input className="form-control py-1.5 text-xs w-48" placeholder="Rechercher..."
             value={search} onChange={e=>{setSearch(e.target.value);setPage(1)}}/>
           <button className="btn btn-ghost btn-sm" onClick={()=>{setFTable('');setFDate('');setSearch('');setPage(1)}}>
             Réinitialiser

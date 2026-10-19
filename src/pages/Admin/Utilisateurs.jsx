@@ -7,6 +7,7 @@ import Layout from '../../components/Layout/Layout'
 import { Modal, Toggle, StatCard, Pagination, SearchInput, Badge } from '../../components/UI/index.jsx'
 import { ApiState } from '../../components/UI/ApiLoader.jsx'
 import { fmtDate } from '../../utils/storage'
+import { Info } from 'lucide-react'
 
 const DEPTS  = ['Sales','Booking','Finance','Administration','Superviseur']
 const COLORS  = { Sales:'#F5A623',Booking:'#27AE60',Finance:'#2980B9',Administration:'#8E44AD',Superviseur:'#2C3E50' }
@@ -49,7 +50,7 @@ export default function Utilisateurs() {
     <Layout breadcrumb={['SITRAC','Administration','Utilisateurs']}>
       <div className="mb-5">
         <h1 className="page-title"><Users size={22} className="text-orange"/> Gestion des Utilisateurs</h1>
-        <p className="page-sub">Administration des comptes SITRAC (RG 01, 29, 36)</p>
+        <p className="page-sub">Administration des comptes SITRAC</p>
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard icon={Users} value={users.length}                        label="Total"        color="orange"/>
@@ -136,7 +137,7 @@ export default function Utilisateurs() {
           </div>
         </div>
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-xs text-brand-blue">
-          ℹ️ Chaque utilisateur appartient à un seul département (RG 01).
+          <Info size={14} className="inline-block align-[-2px] mr-1"/>Chaque utilisateur appartient à un seul département.
         </div>
       </Modal>
     </Layout>

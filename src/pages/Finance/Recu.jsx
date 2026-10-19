@@ -62,7 +62,7 @@ export default function Recu() {
     mutationFn: (id) => financeAPI.deleteRecu(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['recus', curPCId] })
-      toast.success('Reçu supprimé', { icon: '⚠️' })
+      toast.success('Reçu supprimé')
     },
     onError: e => toast.error(e.message),
   })
@@ -80,7 +80,7 @@ export default function Recu() {
     <Layout breadcrumb={['SITRAC','Finance','Dossier Finance','Reçus']}>
       <div className="mb-5">
         <h1 className="page-title"><Receipt size={22} className="text-orange"/> Reçus Prestataires</h1>
-        <p className="page-sub">Gestion des reçus de paiement aux prestataires (RG 26)</p>
+        <p className="page-sub">Gestion des reçus de paiement aux prestataires</p>
       </div>
       <div className="grid grid-cols-3 gap-4 mb-6">
         <StatCard icon={Receipt} value={pcs.length} label="Total dossiers" color="orange"/>

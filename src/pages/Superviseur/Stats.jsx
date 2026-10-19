@@ -5,6 +5,7 @@ import { useAuditStats } from '../../hooks/useApi'
 import Layout from '../../components/Layout/Layout'
 import { StatCard } from '../../components/UI/index.jsx'
 import { ApiState } from '../../components/UI/ApiLoader.jsx'
+import { BarChart3 as IcoBarres, PieChart as IcoCamembert, Database as IcoTables, TrendingUp as IcoTendance, Trophy as IcoTrophee } from 'lucide-react'
 
 const MONTHS = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc']
 
@@ -34,7 +35,7 @@ export default function SuperviseurStats() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="page-title"><BarChart2 size={22} className="text-orange"/> Statistiques d'Audit</h1>
-            <p className="page-sub">Analyse complète des actions INSERT / UPDATE / DELETE (RG 30, 38)</p>
+            <p className="page-sub">Analyse complète des actions INSERT / UPDATE / DELETE</p>
           </div>
           <button className="btn btn-ghost btn-sm" onClick={refetch}>
             <RefreshCw size={13}/> Actualiser
@@ -54,7 +55,7 @@ export default function SuperviseurStats() {
         {/* Graphiques ligne 1 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
           <div className="card">
-            <div className="card-header"><h3 className="font-title font-bold text-sm">📊 Activité par Département</h3></div>
+            <div className="card-header"><h3 className="font-title font-bold text-sm flex items-center gap-2"><IcoBarres size={15} className="text-orange shrink-0"/>Activité par Département</h3></div>
             <div className="card-body">
               {deptData.length === 0
                 ? <div className="h-40 flex items-center justify-center text-sm text-gray-400">Aucune donnée</div>
@@ -76,7 +77,7 @@ export default function SuperviseurStats() {
           </div>
 
           <div className="card">
-            <div className="card-header"><h3 className="font-title font-bold text-sm">🥧 Répartition INSERT/UPDATE/DELETE</h3></div>
+            <div className="card-header"><h3 className="font-title font-bold text-sm flex items-center gap-2"><IcoCamembert size={15} className="text-orange shrink-0"/>Répartition INSERT/UPDATE/DELETE</h3></div>
             <div className="card-body flex items-center gap-8 flex-wrap">
               {actionData.length === 0
                 ? <div className="h-40 flex items-center justify-center w-full text-sm text-gray-400">Aucune donnée</div>
@@ -114,7 +115,7 @@ export default function SuperviseurStats() {
 
         {/* Activité mensuelle */}
         <div className="card mb-5">
-          <div className="card-header"><h3 className="font-title font-bold text-sm">📈 Activité Mensuelle</h3></div>
+          <div className="card-header"><h3 className="font-title font-bold text-sm flex items-center gap-2"><IcoTendance size={15} className="text-orange shrink-0"/>Activité Mensuelle</h3></div>
           <div className="card-body">
             <ResponsiveContainer width="100%" height={160}>
               <LineChart data={monthData} margin={{top:5,right:10,bottom:5,left:-20}}>
@@ -132,7 +133,7 @@ export default function SuperviseurStats() {
         {/* Top users + Top tables */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <div className="card">
-            <div className="card-header"><h3 className="font-title font-bold text-sm">🏆 Top Utilisateurs</h3></div>
+            <div className="card-header"><h3 className="font-title font-bold text-sm flex items-center gap-2"><IcoTrophee size={15} className="text-orange shrink-0"/>Top Utilisateurs</h3></div>
             <div className="card-body">
               {userTop.length === 0
                 ? <div className="text-center py-8 text-sm text-gray-400">Aucune donnée</div>
@@ -152,7 +153,7 @@ export default function SuperviseurStats() {
           </div>
 
           <div className="card">
-            <div className="card-header"><h3 className="font-title font-bold text-sm">🗃️ Tables les plus actives</h3></div>
+            <div className="card-header"><h3 className="font-title font-bold text-sm flex items-center gap-2"><IcoTables size={15} className="text-orange shrink-0"/>Tables les plus actives</h3></div>
             <div className="card-body space-y-3">
               {tableTop.length === 0
                 ? <div className="text-center py-8 text-sm text-gray-400">Aucune donnée</div>

@@ -57,7 +57,7 @@ export default function AnnulationDossier({ pc, open, onClose }) {
   }
   const annuler = useMutation({
     mutationFn: () => annulationsAPI.annuler(pc.id, { motif, taux_retenue: taux, frais_non_remboursables: frais }),
-    onSuccess: () => { toast.success('Dossier annulé (RG 34)'); rafraichir(); onClose() },
+    onSuccess: () => { toast.success('Dossier annulé'); rafraichir(); onClose() },
     onError: (e) => toast.error(e.message),
   })
   const reactiver = useMutation({

@@ -8,6 +8,7 @@ import { StatCard, Badge, Pagination } from '../../components/UI/index.jsx'
 import { ApiState } from '../../components/UI/ApiLoader.jsx'
 import { Modal } from '../../components/UI/index.jsx'
 import { fmtDateTime } from '../../utils/storage'
+import { BarChart3 as IcoBarres, PieChart as IcoCamembert } from 'lucide-react'
 
 const ACTION_META = {
   INSERT: { bg:'bg-green-100 dark:bg-green-900/30', text:'text-green-800 dark:text-green-400' },
@@ -83,7 +84,7 @@ export default function Journal() {
       {stats && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
           <div className="card">
-            <div className="card-header"><h3 className="font-title font-bold text-sm">📊 Activité par Département</h3></div>
+            <div className="card-header"><h3 className="font-title font-bold text-sm flex items-center gap-2"><IcoBarres size={15} className="text-orange shrink-0"/>Activité par Département</h3></div>
             <div className="card-body">
               <ResponsiveContainer width="100%" height={140}>
                 <BarChart data={stats.par_dept?.map(d=>({name:d.user_dept?.substring(0,5)||'?', value:d.total}))}
@@ -97,7 +98,7 @@ export default function Journal() {
             </div>
           </div>
           <div className="card">
-            <div className="card-header"><h3 className="font-title font-bold text-sm">🥧 Répartition des Actions</h3></div>
+            <div className="card-header"><h3 className="font-title font-bold text-sm flex items-center gap-2"><IcoCamembert size={15} className="text-orange shrink-0"/>Répartition des Actions</h3></div>
             <div className="card-body flex items-center gap-6 flex-wrap">
               <ResponsiveContainer width={110} height={110}>
                 <PieChart>
@@ -147,7 +148,7 @@ export default function Journal() {
             value={fUser} onChange={e=>{setFUser(e.target.value);setPage(1)}}/>
           <input type="date" className="form-control py-1.5 text-xs" style={{width:150}}
             value={fDate} onChange={e=>{setFDate(e.target.value);setPage(1)}}/>
-          <input className="form-control py-1.5 text-xs" style={{width:190}} placeholder="🔍 Rechercher..."
+          <input className="form-control py-1.5 text-xs" style={{width:190}} placeholder="Rechercher..."
             value={search} onChange={e=>{setSearch(e.target.value);setPage(1)}}/>
         </div>
 
@@ -196,11 +197,11 @@ export default function Journal() {
             {(detail.donnees_avant || detail.donnees_apres) && (
               <div className="grid grid-cols-2 gap-3">
                 {detail.donnees_avant && <div>
-                  <div className="text-xs font-bold text-brand-red mb-1">🔴 Avant</div>
+                  <div className="text-xs font-bold text-brand-red mb-1 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-brand-red"/>Avant</div>
                   <pre className="text-xs bg-red-50 dark:bg-red-900/20 p-3 rounded-lg overflow-auto max-h-36">{JSON.stringify(detail.donnees_avant,null,2)}</pre>
                 </div>}
                 {detail.donnees_apres && <div>
-                  <div className="text-xs font-bold text-brand-green mb-1">🟢 Après</div>
+                  <div className="text-xs font-bold text-brand-green mb-1 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-brand-green"/>Après</div>
                   <pre className="text-xs bg-green-50 dark:bg-green-900/20 p-3 rounded-lg overflow-auto max-h-36">{JSON.stringify(detail.donnees_apres,null,2)}</pre>
                 </div>}
               </div>

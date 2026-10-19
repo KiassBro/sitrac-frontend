@@ -1,4 +1,5 @@
 export { default as Modal }          from './Modal'
+import { Search, Info, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react'
 export { default as ConfirmDialog }  from './ConfirmDialog'
 
 // ── Toggle switch ──────────────────────────────────────────────
@@ -116,9 +117,11 @@ export function Alert({ type = 'info', children }) {
     success: 'bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300',
     danger:  'bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300',
   }
+  const Icone = { info: Info, warning: AlertTriangle, success: CheckCircle2, danger: XCircle }[type] || Info
   return (
     <div className={`flex items-start gap-2.5 p-3.5 rounded-lg border text-sm mb-4 ${styles[type]}`}>
-      {children}
+      <Icone size={16} className="flex-shrink-0 mt-0.5"/>
+      <div className="min-w-0">{children}</div>
     </div>
   )
 }
@@ -127,7 +130,7 @@ export function Alert({ type = 'info', children }) {
 export function SearchInput({ value, onChange, placeholder = 'Rechercher...' }) {
   return (
     <div className="relative">
-      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+      <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"/>
       <input
         type="text"
         value={value}

@@ -9,6 +9,8 @@ import { timeAgo } from '../utils/storage'
 import Layout from '../components/Layout/Layout'
 import { Badge } from '../components/UI/index.jsx'
 import { authAPI } from '../utils/api'
+import { Monitor as IcoSession } from 'lucide-react'
+import { CheckCircle2, XCircle, Laptop } from 'lucide-react'
 
 const DEPT_PERMS = {
   Sales: [
@@ -106,7 +108,7 @@ export default function Profile() {
     if (data.newPass !== data.confirmPass) { toast.error('Les mots de passe ne correspondent pas'); return }
     if (data.newPass.length < 6) { toast.error('Minimum 6 caractères'); return }
     confirm({
-      icon:'🔐', type:'warning', title:'Changer le mot de passe',
+      icon:'cle', type:'warning', title:'Changer le mot de passe',
       msg:'Votre mot de passe sera changé. Vous devrez vous reconnecter.',
       confirmText:'Oui, changer',
       onConfirm: async () => {
@@ -128,7 +130,7 @@ export default function Profile() {
   }
 
   const strColors = ['','bg-brand-red','bg-orange','bg-orange','bg-brand-green']
-  const strLabels = ['','Très faible','Faible','Moyen','Fort ✓']
+  const strLabels = ['','Très faible','Faible','Moyen','Fort']
   const reqs = [
     { label:'Au moins 6 caractères',         ok: newPassVal.length >= 6     },
     { label:'Au moins 1 majuscule',           ok: /[A-Z]/.test(newPassVal)   },
@@ -269,7 +271,7 @@ export default function Profile() {
                     </div>
                     {passMatch !== null && (
                       <p className={`text-xs mt-1 ${passMatch?'text-brand-green':'text-brand-red'}`}>
-                        {passMatch ? '✓ Les mots de passe correspondent' : '✗ Les mots de passe ne correspondent pas'}
+                        {passMatch ? <><Check size={12} className="inline -mt-px mr-1"/>Les mots de passe correspondent</> : <><X size={12} className="inline -mt-px mr-1"/>Les mots de passe ne correspondent pas</>}
                       </p>
                     )}
                   </div>
@@ -289,7 +291,7 @@ export default function Profile() {
                     :p.ok==='ro'?'bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-400'
                     :'bg-gray-50 dark:bg-gray-800 text-gray-400 line-through'}`}
                   >
-                    <span className="text-base">{p.ok===true?'✅':p.ok==='ro'?'👁':'❌'}</span>
+                    <span className="flex-shrink-0">{p.ok===true?<CheckCircle2 size={16}/>:p.ok==='ro'?<Eye size={16}/>:<XCircle size={16}/>}</span>
                     <span className="font-medium">{p.label}</span>
                     <span className="ml-auto text-xs font-bold opacity-60">{p.ok===true?'Autorisé':p.ok==='ro'?'Lecture':'Non autorisé'}</span>
                   </div>
@@ -324,10 +326,10 @@ export default function Profile() {
         {/* Right: session card */}
         <div>
           <div className="card">
-            <div className="card-header"><h3 className="font-title font-bold text-sm">🖥️ Session en cours</h3></div>
+            <div className="card-header"><h3 className="font-title font-bold text-sm flex items-center gap-2"><IcoSession size={15} className="text-orange shrink-0"/>Session en cours</h3></div>
             <div className="card-body">
               <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800 mb-4">
-                <div className="w-10 h-10 bg-brand-green rounded-xl flex items-center justify-center text-white text-lg">💻</div>
+                <div className="w-10 h-10 bg-brand-green rounded-xl flex items-center justify-center text-white"><Laptop size={18}/></div>
                 <div>
                   <div className="text-sm font-bold text-green-800 dark:text-green-400">Session active</div>
                   <div className="text-xs text-green-700 dark:text-green-500">Navigateur Web · {new Date().toLocaleString('fr-FR')}</div>
@@ -336,7 +338,7 @@ export default function Profile() {
               </div>
               <button
                 className="btn btn-danger w-full justify-center"
-                onClick={() => confirm({ icon:'👋', type:'danger', title:'Déconnexion', msg:'Voulez-vous vous déconnecter ?', confirmText:'Oui, déconnecter', onConfirm: () => { logout(); window.location.href = '/login' } })}
+                onClick={() => confirm({ icon:'deconnexion', type:'danger', title:'Déconnexion', msg:'Voulez-vous vous déconnecter ?', confirmText:'Oui, déconnecter', onConfirm: () => { logout(); window.location.href = '/login' } })}
               >
                 <LogOut size={14}/> Se déconnecter
               </button>

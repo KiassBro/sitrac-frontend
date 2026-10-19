@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { Package, Plus, Pencil, Trash2, ArrowLeft, Save, Download, Upload } from 'lucide-react'
 import { useProgrammeClients } from '../../hooks/useApi'
@@ -48,6 +48,30 @@ function ProvisionForm({ pc, onBack }) {
   })
 
   const total = lignes.reduce((s,l) => s + (+l.montant||0), 0)
+
+  // Nouvelle provision : reprend les prestations du brieffing (RG 19) —
+  // description, prestataire, date et tarif ; rien n'est ressaisi.
+  const [reprise, setReprise] = useState(false)
+  const reprendreBrieffing = async (silencieux = false) => {
+    try {
+      const brf = await bookingAPI.getBrieffings(`?programme_client=${pc.id}`).then(r => (r.results||r)[0] || null)
+      const nouvelles = (brf?.lignes || []).map(l => ({
+        description: l.itineraire ? `${l.itineraire} — ${l.prestataire}` : l.prestataire,
+        prestataire: l.prestataire, montant: +l.tarif_paiement || 0, date: l.date || '',
+      }))
+      if (!nouvelles.length) { if (!silencieux) toast('Aucune ligne dans le brieffing'); return }
+      setLignes(prev => {
+        const deja = new Set(prev.map(l => `${l.date}|${(l.prestataire||'').toLowerCase()}`))
+        return [...prev, ...nouvelles.filter(l => !deja.has(`${l.date}|${(l.prestataire||'').toLowerCase()}`))]
+      })
+      toast.success(`${nouvelles.length} ligne(s) reprise(s) du brieffing`)
+    } catch { if (!silencieux) toast.error('Brieffing introuvable') }
+  }
+  useEffect(() => {
+    if (isLoading || prov || reprise) return
+    setReprise(true)
+    if (lignes.length === 0) reprendreBrieffing(true)
+  }, [isLoading, prov])
 
   const openAdd  = () => { setEditIdx(null); lgMethods.reset({ description:'', prestataire:'', montant:'', date:'' }); setLgModal(true) }
   const openEdit = (i) => { setEditIdx(i); lgMethods.reset({...lignes[i]}); setLgModal(true) }
@@ -129,6 +153,8 @@ function ProvisionForm({ pc, onBack }) {
         <div className="card-header">
           <h3 className="font-title font-bold text-sm text-gray-800 dark:text-gray-200">Lignes de Dépenses Prévisionnelles</h3>
           <div className="flex items-center gap-2">
+            <button className="btn btn-ghost btn-sm" onClick={() => reprendreBrieffing(false)}
+              title="Ajoute les prestations du brieffing qui ne sont pas encore provisionnées"><Plus size={13}/> Reprendre le brieffing</button>
             <button className="btn btn-primary btn-sm" onClick={openAdd}><Plus size={13}/> Ajouter</button>
             <button className="btn btn-ghost btn-sm" disabled={!prov || csvBusy} onClick={exportCsv}
               title={!prov ? "Enregistrez d'abord la provision pour pouvoir exporter" : ''}>
@@ -210,7 +236,7 @@ export default function Provision() {
     <Layout breadcrumb={['SITRAC','Booking','Dossier Booking','Provision']}>
       <div className="mb-5">
         <h1 className="page-title"><Package size={22} className="text-orange"/> Provision</h1>
-        <p className="page-sub">Dépenses prévisionnelles par dossier client (RG 19)</p>
+        <p className="page-sub">Dépenses prévisionnelles par dossier client</p>
       </div>
       <div className="grid grid-cols-3 gap-4 mb-6">
         <StatCard icon={Package} value={eligible.length} label="Dossiers éligibles" color="orange"/>

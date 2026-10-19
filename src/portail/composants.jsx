@@ -14,7 +14,7 @@ import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import {
   Compass, Loader, LogOut, Mail, Menu, MessageCircle, Sparkles, UserRound, X,
 } from 'lucide-react'
-import fondBaobabs from '../assets/Baobab.png'
+import fondBaobabs from '../assets/Baobab.webp'
 import { SessionPortail } from './api'
 import { useLangue, useT } from './i18n'
 
@@ -27,7 +27,7 @@ export const AGENCE = {
 export const IMAGE_FOND = fondBaobabs
 const lienWhatsApp = `https://wa.me/${AGENCE.whatsapp.replace('+', '')}`
 
-// Selon la feuille de style globale, la page défile sur window ou sur <body> : on gère les deux.
+// La page défile sur la fenêtre (voir index.css) ; <body> est gardé par sécurité.
 const positionDefilement = () => Math.max(window.scrollY || 0, document.documentElement.scrollTop || 0, document.body.scrollTop || 0)
 export const remonterEnHaut = () => { window.scrollTo(0, 0); document.documentElement.scrollTop = 0; document.body.scrollTop = 0 }
 
@@ -119,8 +119,8 @@ function LayoutClient({ session, large, children }) {
   return (
     <div className="min-h-screen bg-rt-mist text-rt-ink font-sans lg:flex">
       {/* Menu latéral (ordinateur) */}
-      <aside className="hidden lg:flex lg:flex-col w-72 shrink-0 h-screen sticky top-0 overflow-y-auto text-white
-                        bg-gradient-to-b from-rt-canopy-dk via-rt-canopy-dk to-rt-canopy relative">
+      <aside className="hidden lg:flex lg:flex-col w-72 shrink-0 h-screen sticky top-0 self-start overflow-y-auto overscroll-contain text-white
+                        bg-gradient-to-b from-rt-canopy-dk via-rt-canopy-dk to-rt-canopy">
         <img src={IMAGE_FOND} alt="" aria-hidden
           className="absolute inset-x-0 bottom-0 h-72 w-full object-cover opacity-[0.14] pointer-events-none select-none
                      [mask-image:linear-gradient(to_top,black,transparent)]" />

@@ -62,7 +62,7 @@ export default function Portefeuilles() {
     if (!transfert.de || !transfert.vers) return toast.error('Choisissez les deux commerciaux.')
     const source = donnees.commerciaux.find((c) => String(c.id) === String(transfert.de))
     confirm({
-      icon: '🔁', type: 'warning', title: 'Transférer le portefeuille',
+      icon:'transfert', type: 'warning', title: 'Transférer le portefeuille',
       msg: `Les ${source?.nb_clients || 0} client(s)${transfert.prospects ? ` et ${source?.nb_prospects || 0} prospect(s) en cours` : ''} `
         + `de ${nom(transfert.de)} seront confiés à ${nom(transfert.vers)}.`,
       confirmText: 'Oui, transférer', onConfirm: executerTransfert,
@@ -94,7 +94,7 @@ export default function Portefeuilles() {
       <div className="mb-5">
         <h1 className="page-title"><Briefcase size={22} className="text-orange" /> Portefeuilles commerciaux</h1>
         <p className="page-sub">
-          RG 29 : chaque commercial ne voit que ses clients et leurs dossiers. Booking, Finance, le Superviseur et
+          Chaque commercial ne voit que ses clients et leurs dossiers. Booking, Finance, le Superviseur et
           l'Administration voient tout. Les clients sans responsable restent visibles par tous les commerciaux :
           le premier qui crée un dossier les prend en charge.
         </p>
