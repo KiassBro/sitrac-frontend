@@ -9,6 +9,7 @@ const Dashboard = lazy(() => import('./pages/Dashboard'))
 const Notifications = lazy(() => import('./pages/Notifications'))
 const Profile = lazy(() => import('./pages/Profile'))
 const Chatbot = lazy(() => import('./pages/Chatbot'))
+const Messages = lazy(() => import('./pages/Messages'))
 
 // Sales
 const Destinations = lazy(() => import('./pages/Sales/Destinations'))
@@ -115,6 +116,7 @@ export default function App() {
       <Route path="/notifications" element={<RequireAuth><Notifications /></RequireAuth>} />
       <Route path="/profile"       element={<RequireAuth><Profile /></RequireAuth>} />
       <Route path="/chatbot"       element={<RequireAuth><Chatbot /></RequireAuth>} />
+      <Route path="/messages"      element={<RequireAuth><Messages /></RequireAuth>} />
 
       {/* Sales */}
       <Route path="/sales/destinations"     element={<RequireAuth depts={SALES}><Destinations /></RequireAuth>} />

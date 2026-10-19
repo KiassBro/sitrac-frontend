@@ -2,13 +2,15 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { useUiStore } from '../../store/uiStore'
 import { useProgrammeClients, useDestinations, useProgrammes } from '../../hooks/useApi'
+import { useQuery } from '@tanstack/react-query'
+import { messagerieAPI } from '../../utils/api'
 import {
   LayoutGrid, Bell, User, MapPin, Route, Calculator, FileText,
   Users, Car, BarChart2, ClipboardList, Package, FileCheck,
   CreditCard, FolderOpen, Receipt, Shield, Settings,
   History, Database, PlusCircle, Edit, Trash2,
   LogOut, Folder, Bot, Handshake, Building2, CalendarRange, Inbox, Star, FileSpreadsheet,
-  Briefcase
+  Briefcase, MessagesSquare
 } from 'lucide-react'
 
 // Référentiel des prestataires (hôtels, transporteurs, guides, parcs…)
@@ -127,6 +129,12 @@ export default function Sidebar() {
   const { data: pcs   = [] } = useProgrammeClients()
   const { data: dests = [] } = useDestinations()
   const { data: progs = [] } = useProgrammes()
+  // Messages non lus de la messagerie interne (rafraîchi toutes les 15 s, onglet visible)
+  const { data: nonLus } = useQuery({
+    queryKey: ['messagerie-non-lus'], queryFn: messagerieAPI.nonLus, enabled: !!user,
+    refetchInterval: 15000, refetchIntervalInBackground: false,
+  })
+  const messagesNonLus = nonLus?.total || 0
 
   if (!user) return null
 
@@ -229,6 +237,28 @@ export default function Sidebar() {
                 <span className="bg-orange text-white text-[10px] font-black
                   px-2 py-0.5 rounded-full">
                   {notifCount}
+                </span>
+              )}
+            </>
+          )}
+        </NavLink>
+
+        <NavLink to="/messages"
+          title={sidebarCollapsed ? 'Messages' : undefined}
+          className={({ isActive }) => `sidebar-link ${isActive?'active':''}`}>
+          <span className="relative flex-shrink-0">
+            <MessagesSquare size={17}/>
+            {sidebarCollapsed && messagesNonLus > 0 && (
+              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-orange ring-2 ring-white dark:ring-gray-900"/>
+            )}
+          </span>
+          {!sidebarCollapsed && (
+            <>
+              <span className="flex-1">Messages</span>
+              {messagesNonLus > 0 && (
+                <span className="bg-orange text-white text-[10px] font-black
+                  px-2 py-0.5 rounded-full">
+                  {messagesNonLus > 99 ? '99+' : messagesNonLus}
                 </span>
               )}
             </>

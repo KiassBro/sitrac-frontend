@@ -324,6 +324,45 @@ export const superviseurAPI = {
 }
 
 
+// Requête authentifiée « brute » (fichiers) : renouvelle le jeton une fois si besoin.
+async function fetchAuthentifie(endpoint, options = {}) {
+  const essai = () => {
+    const token = TokenManager.getAccess()
+    return fetch(`${BASE_URL}${endpoint}`, { ...options, headers: { ...(options.headers || {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) } })
+  }
+  let res = await essai()
+  if (res.status === 401 && TokenManager.getRefresh()) {
+    try { await refreshAccessToken(); res = await essai() } catch { /* session expirée */ }
+  }
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    throw new Error(data.detail || `Erreur HTTP ${res.status}`)
+  }
+  return res
+}
+
+// Envoi multipart (texte + fichier) ; le navigateur fixe lui-même le Content-Type.
+async function envoyerMultipart(endpoint, champs) {
+  const fd = new FormData()
+  Object.entries(champs).forEach(([k, v]) => { if (v !== undefined && v !== null) fd.append(k, v) })
+  const res = await fetchAuthentifie(endpoint, { method: 'POST', body: fd })
+  return res.json()
+}
+
+// ─── Messagerie interne (personnel uniquement) ──────────────────
+export const messagerieAPI = {
+  contacts:      ()            => api.get('/messagerie/contacts/'),
+  conversations: ()            => api.get('/messagerie/conversations/'),
+  ouvrir:        (data)        => api.post('/messagerie/conversations/', data),
+  messages:      (id, apres=0) => api.get(`/messagerie/conversations/${id}/messages/${apres ? `?apres=${apres}` : ''}`),
+  anciens:       (id, avant)   => api.get(`/messagerie/conversations/${id}/messages/?avant=${avant}`),
+  envoyer:       (id, texte)   => api.post(`/messagerie/conversations/${id}/messages/`, { texte }),
+  nonLus:        ()            => api.get('/messagerie/non-lus/'),
+  envoyerFichier: (id, texte, fichier) => envoyerMultipart(`/messagerie/conversations/${id}/messages/`, { texte, fichier }),
+  fichierBlob:   (messageId)   => fetchAuthentifie(`/messagerie/messages/${messageId}/fichier/`).then((r) => r.blob()),
+  telecharger:   (messageId, nom) => downloadFile(`/messagerie/messages/${messageId}/fichier/`, nom),
+}
+
 export const chatbotAPI = {
   send: (messages) => api.post('/chatbot/', { messages }),
 }
