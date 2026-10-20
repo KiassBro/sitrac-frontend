@@ -10,6 +10,7 @@ const Notifications = lazy(() => import('./pages/Notifications'))
 const Profile = lazy(() => import('./pages/Profile'))
 const Chatbot = lazy(() => import('./pages/Chatbot'))
 const Messages = lazy(() => import('./pages/Messages'))
+const CarteClients = lazy(() => import('./pages/Sales/CarteClients'))
 
 // Sales
 const Destinations = lazy(() => import('./pages/Sales/Destinations'))
@@ -122,6 +123,7 @@ export default function App() {
       <Route path="/sales/destinations"     element={<RequireAuth depts={SALES}><Destinations /></RequireAuth>} />
       <Route path="/sales/programmes"       element={<RequireAuth depts={SALES}><Programmes /></RequireAuth>} />
       <Route path="/sales/gi"               element={<RequireAuth depts={SALES}><InformationsGenerales /></RequireAuth>} />
+      <Route path="/clients/carte"          element={<RequireAuth depts={['Sales','Administration','Booking','Finance']}><CarteClients /></RequireAuth>} />
       <Route path="/sales/pc"               element={<RequireAuth depts={SALES}><ProgrammeClient /></RequireAuth>} />
       <Route path="/sales/cotation"         element={<RequireAuth depts={SALES}><Cotation /></RequireAuth>} />
       <Route path="/sales/facture-pro"      element={<RequireAuth depts={SALES}><FacturePro /></RequireAuth>} />

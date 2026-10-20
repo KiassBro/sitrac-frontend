@@ -194,6 +194,7 @@ export const salesAPI = {
   // Clients Leaders
   getClient:       (id) => api.get(`/sales/clients/${id}/`),
   getClients:      (params = '') => api.get(`/sales/clients/${params}`),
+  getClientsParPays: (source = 'residence') => api.get(`/sales/clients/par-pays/?source=${source}`),
   createClient:    (data)        => api.post('/sales/clients/', data),
   updateClient:    (id, data)    => api.patch(`/sales/clients/${id}/`, data),
   deleteClient:    (id)          => api.delete(`/sales/clients/${id}/`),

@@ -10,7 +10,7 @@ import {
   CreditCard, FolderOpen, Receipt, Shield, Settings,
   History, Database, PlusCircle, Edit, Trash2,
   LogOut, Folder, Bot, Handshake, Building2, CalendarRange, Inbox, Star, FileSpreadsheet,
-  Briefcase, MessagesSquare
+  Briefcase, MessagesSquare, Globe2
 } from 'lucide-react'
 
 // Référentiel des prestataires (hôtels, transporteurs, guides, parcs…)
@@ -19,6 +19,8 @@ const PRESTATAIRES = { to:'/prestataires', icon:Building2, label:'Prestataires' 
 const PLANNING = { to:'/planning', icon:CalendarRange, label:'Planning ressources' }
 // Demandes de devis (prospects), avant le dossier client
 const PROSPECTS = { to:'/prospects', icon:Inbox, label:'Prospects' }
+// Répartition des clients par pays sur une carte du monde
+const CARTE_CLIENTS = { to:'/clients/carte', icon:Globe2, label:'Cartographie clients' }
 // Journaux et écritures pour la comptabilité
 const EXPORTS_COMPTA = { to:'/finance/exports', icon:FileSpreadsheet, label:'Exports comptables' }
 
@@ -41,6 +43,7 @@ const DEPT_LINKS = {
     { section: 'Dossier Client' },
     PROSPECTS,
     { to:'/sales/gi',              icon:User,           label:'Informations Générales'},
+    CARTE_CLIENTS,
     { to:'/sales/pc',              icon:Car,            label:'Programme Client'      },
     { to:'/sales/cotation',        icon:FileText,       label:'Cotation'              },
     { to:'/sales/facture-pro',     icon:BarChart2,      label:'Facture Pro'           },
@@ -52,6 +55,7 @@ const DEPT_LINKS = {
     { to:'/booking/provision',      icon:Package,        label:'Provision'             },
     { section: 'Lecture seule' },
     { to:'/booking/dossier-vente',  icon:Folder,         label:'Dossiers de vente'     },
+    CARTE_CLIENTS,
     { section: 'Référentiel' },
     PRESTATAIRES,
     PLANNING,
@@ -67,6 +71,7 @@ const DEPT_LINKS = {
     { section: 'Lecture seule' },
     { to:'/finance/dossier-vente',  icon:Folder,         label:'Dossiers de vente'     },
     { to:'/finance/dossier-booking',icon:FolderOpen,     label:'Dossiers Booking'      },
+    CARTE_CLIENTS,
     { section: 'Référentiel' },
     PRESTATAIRES,
     PLANNING,
@@ -81,6 +86,7 @@ const DEPT_LINKS = {
     { section: 'Dossier Client' },
     PROSPECTS,
     { to:'/sales/gi',              icon:User,            label:'Informations Générales'},
+    CARTE_CLIENTS,
     { to:'/sales/pc',              icon:Car,             label:'Programme Client'      },
     { to:'/sales/cotation',        icon:FileText,        label:'Cotation'              },
     { to:'/sales/facture-pro',     icon:BarChart2,       label:'Facture Pro'           },
