@@ -2,12 +2,12 @@
  * SITRAC — API du planning des ressources (chauffeurs, guides, véhicules).
  * Fichier séparé de utils/api.js pour ne pas avoir à modifier ce dernier.
  */
-import { api } from './api'
+import { api, toutesLesPages } from './api'
 
 export const TYPES_RESSOURCE = [['chauffeur', 'Chauffeur'], ['guide', 'Guide'], ['vehicule', 'Véhicule']]
 
 export const ressourcesAPI = {
-  liste:     (type)         => api.get(`/ressources/${type ? `?type=${type}` : ''}`),
+  liste:     (type)         => toutesLesPages(`/ressources/${type ? `?type=${type}` : ''}`),
   creer:     (data)         => api.post('/ressources/', data),
   modifier:  (id, data)     => api.patch(`/ressources/${id}/`, data),
   supprimer: (id)           => api.delete(`/ressources/${id}/`),

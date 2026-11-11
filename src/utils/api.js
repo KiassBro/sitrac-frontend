@@ -114,6 +114,28 @@ export const api = {
   delete: (url, opts = {}) => apiFetch(url, { method: 'DELETE', ...opts }),
 }
 
+// ─── Listes complètes ───────────────────────────────────────────
+// Le serveur découpe les listes par pages de 10 (pagination). Les écrans qui
+// affichent une liste entière (destinations, programmes, clients, dossiers…)
+// n'en recevaient que la première page : au-delà du 10e élément, les
+// nouveaux enregistrements, pourtant bien en base, n'apparaissaient pas.
+// toutesLesPages() récupère toutes les pages (100 éléments par appel).
+// Un appel qui demande explicitement une page (?page=…) n'est pas modifié.
+export async function toutesLesPages(endpoint) {
+  if (/[?&]page=/.test(endpoint)) return api.get(endpoint)
+  const sep  = endpoint.includes('?') ? '&' : '?'
+  const base = /[?&]page_size=/.test(endpoint) ? endpoint : `${endpoint}${sep}page_size=100`
+  const premiere = await api.get(base)
+  if (!premiere || !Array.isArray(premiere.results) || !premiere.next) return premiere
+  const results = [...premiere.results]
+  const pages = Math.min(premiere.total_pages || 1, 100)
+  for (let page = 2; page <= pages; page++) {
+    const r = await api.get(`${base}&page=${page}`)
+    results.push(...(r.results || []))
+  }
+  return { ...premiere, results, next: null, previous: null, current_page: 1 }
+}
+
 // ─── Téléchargement de fichier authentifié ──────────────────────
 // BUG CORRIGÉ : l'export CSV du Superviseur utilisait auparavant
 // `window.open(url)`, une navigation de navigateur classique qui n'envoie
@@ -167,7 +189,7 @@ export const authAPI = {
   me:             ()                 => api.get('/auth/me/'),
   updateMe:       (data)             => api.patch('/auth/me/', data),
   changePassword: (data)             => api.post('/auth/change-password/', data),
-  getUtilisateurs:(params = '')      => api.get(`/auth/utilisateurs/${params}`),
+  getUtilisateurs:(params = '')      => toutesLesPages(`/auth/utilisateurs/${params}`),
   createUser:     (data)             => api.post('/auth/utilisateurs/', data),
   updateUser:     (id, data)         => api.patch(`/auth/utilisateurs/${id}/`, data),
   deleteUser:     (id)               => api.delete(`/auth/utilisateurs/${id}/`),
@@ -178,14 +200,14 @@ export const authAPI = {
 
 export const salesAPI = {
   // Destinations
-  getDestinations: (params = '') => api.get(`/sales/destinations/${params}`),
+  getDestinations: (params = '') => toutesLesPages(`/sales/destinations/${params}`),
   createDest:      (data)        => api.post('/sales/destinations/', data),
   updateDest:      (id, data)    => api.patch(`/sales/destinations/${id}/`, data),
   deleteDest:      (id)          => api.delete(`/sales/destinations/${id}/`),
   toggleDest:      (id)          => api.patch(`/sales/destinations/${id}/toggle-actif/`),
 
   // Programmes
-  getProgrammes:   (params = '') => api.get(`/sales/programmes/${params}`),
+  getProgrammes:   (params = '') => toutesLesPages(`/sales/programmes/${params}`),
   createProg:      (data)        => api.post('/sales/programmes/', data),
   updateProg:      (id, data)    => api.patch(`/sales/programmes/${id}/`, data),
   deleteProg:      (id)          => api.delete(`/sales/programmes/${id}/`),
@@ -193,7 +215,7 @@ export const salesAPI = {
 
   // Clients Leaders
   getClient:       (id) => api.get(`/sales/clients/${id}/`),
-  getClients:      (params = '') => api.get(`/sales/clients/${params}`),
+  getClients:      (params = '') => toutesLesPages(`/sales/clients/${params}`),
   getClientsParPays: (source = 'residence') => api.get(`/sales/clients/par-pays/?source=${source}`),
   createClient:    (data)        => api.post('/sales/clients/', data),
   updateClient:    (id, data)    => api.patch(`/sales/clients/${id}/`, data),
@@ -203,7 +225,7 @@ export const salesAPI = {
   deletePax:       (clientId, paxId) => api.delete(`/sales/clients/${clientId}/pax/${paxId}/`),
 
   // Programme Clients
-  getPCs:          (params = '') => api.get(`/sales/programme-clients/${params}`),
+  getPCs:          (params = '') => toutesLesPages(`/sales/programme-clients/${params}`),
   createPC:        (data)        => api.post('/sales/programme-clients/', data),
   updatePC:        (id, data)    => api.patch(`/sales/programme-clients/${id}/`, data),
   deletePC:        (id)          => api.delete(`/sales/programme-clients/${id}/`),
@@ -238,21 +260,21 @@ export const salesAPI = {
   getFactureProHistorique: (pcId) => api.get(`/sales/programme-clients/${pcId}/facture-pro/historique/`),
 
   // ── Cotation Libre ──────────────────────────────────────────
-  getCotationsLibres: (params = '') => api.get(`/sales/cotations-libres/${params}`),
+  getCotationsLibres: (params = '') => toutesLesPages(`/sales/cotations-libres/${params}`),
   createCotLibre:     (data)        => api.post('/sales/cotations-libres/', data),
   updateCotLibre:     (id, data)    => api.put(`/sales/cotations-libres/${id}/`, data),
   deleteCotLibre:     (id)          => api.delete(`/sales/cotations-libres/${id}/`),
 
   // ── Facture Pro Libre ───────────────────────────────────────
-  getFPLibres:   (params = '') => api.get(`/sales/factures-pro-libres/${params}`),
+  getFPLibres:   (params = '') => toutesLesPages(`/sales/factures-pro-libres/${params}`),
   createFPLibre: (data)        => api.post('/sales/factures-pro-libres/', data),
   updateFPLibre: (id, data)    => api.put(`/sales/factures-pro-libres/${id}/`, data),
   deleteFPLibre: (id)          => api.delete(`/sales/factures-pro-libres/${id}/`),
 }
 
 export const bookingAPI = {
-  getDossiersVente: (params = '') => api.get(`/booking/dossiers-vente/${params}`),
-  getBrieffings:    (params = '') => api.get(`/booking/brieffings/${params}`),
+  getDossiersVente: (params = '') => toutesLesPages(`/booking/dossiers-vente/${params}`),
+  getBrieffings:    (params = '') => toutesLesPages(`/booking/brieffings/${params}`),
   createBrieffing:  (data)        => api.post('/booking/brieffings/', data),
   updateBrieffing:  (id, data)    => api.put(`/booking/brieffings/${id}/`, data),
   deleteBrieffing:  (id)          => api.delete(`/booking/brieffings/${id}/`),
@@ -260,7 +282,7 @@ export const bookingAPI = {
   exportBrieffingCsv: (id) => downloadFile(`/booking/brieffings/${id}/export-csv/`, `brieffing_${id}.csv`),
   importBrieffingCsv: (id, file) => uploadFile(`/booking/brieffings/${id}/import-csv/`, file),
 
-  getProvisions:    (params = '') => api.get(`/booking/provisions/${params}`),
+  getProvisions:    (params = '') => toutesLesPages(`/booking/provisions/${params}`),
   createProvision:  (data)        => api.post('/booking/provisions/', data),
   updateProvision:  (id, data)    => api.put(`/booking/provisions/${id}/`, data),
   // RG 31/32 : Export/Import CSV des lignes de provision
@@ -269,20 +291,20 @@ export const bookingAPI = {
 }
 
 export const financeAPI = {
-  getDossiersVente:    (p = '') => api.get(`/finance/dossiers-vente/${p}`),
-  getDossiersBooking:  (p = '') => api.get(`/finance/dossiers-booking/${p}`),
-  getFacturesDef:      (p = '') => api.get(`/finance/factures-definitives/${p}`),
+  getDossiersVente:    (p = '') => toutesLesPages(`/finance/dossiers-vente/${p}`),
+  getDossiersBooking:  (p = '') => toutesLesPages(`/finance/dossiers-booking/${p}`),
+  getFacturesDef:      (p = '') => toutesLesPages(`/finance/factures-definitives/${p}`),
   createFactureDef:    (data)   => api.post('/finance/factures-definitives/', data),
   updateFactureDef:    (id, d)  => api.put(`/finance/factures-definitives/${id}/`, d),
   envoyerFactureDefEmail: (id, email) => api.post(`/finance/factures-definitives/${id}/envoyer-email/`, email ? { email } : {}),
-  getPaiements:        (p = '') => api.get(`/finance/paiements/${p}`),
+  getPaiements:        (p = '') => toutesLesPages(`/finance/paiements/${p}`),
   createPaiement:      (data)   => api.post('/finance/paiements/', data),
   deletePaiement:      (id)     => api.delete(`/finance/paiements/${id}/`),
   getResumePaiements:  (pcId)   => api.get(`/finance/paiements/resume/${pcId}/`),
-  getClotures:         (p = '') => api.get(`/finance/clotures/${p}`),
+  getClotures:         (p = '') => toutesLesPages(`/finance/clotures/${p}`),
   createCloture:       (data)   => api.post('/finance/clotures/', data),
   updateCloture:     (id, data) => api.put(`/finance/clotures/${id}/`, data),
-  getRecus:            (p = '') => api.get(`/finance/recus/${p}`),
+  getRecus:            (p = '') => toutesLesPages(`/finance/recus/${p}`),
   createRecu:          (data)   => api.post('/finance/recus/', data),
   deleteRecu:          (id)     => api.delete(`/finance/recus/${id}/`),
 }

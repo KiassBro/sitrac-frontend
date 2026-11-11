@@ -79,7 +79,10 @@ function FactureDefPrintModal({ pc, fd, open, onClose }) {
 
   const today_str = new Date().toLocaleDateString('fr-FR',
     { day: '2-digit', month: 'long', year: 'numeric' })
-  const refDoc   = `FD-${String(pc.id).padStart(4, '0')}-${new Date().getFullYear()}`
+  // Numéro légal attribué par le serveur à l'émission (FD-AAAA-NNNN). Avant, la référence
+  // était recalculée ici avec l'id du DOSSIER et l'année EN COURS : elle différait de
+  // l'email et des exports, et changeait si la facture était réimprimée l'année suivante.
+  const refDoc   = fd.numero || 'NON ENREGISTRÉE'
   const lignes   = fd.lignes || []
   const totalHT  = lignes.reduce((s, l) => s + (+l.nombre||1) * (+l.prix_unitaire||0), 0)
   const totalTTC = totalHT - (+fd.remise||0)
@@ -390,6 +393,7 @@ function FactureDefForm({ pc, onBack }) {
 
   const openPrint = () => {
     setPrintFD({
+      numero:       fd?.numero,
       date_facture: dateFac,
       remise:       remise,
       lignes:       lignes,

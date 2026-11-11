@@ -132,8 +132,8 @@ export default function Utilisateurs() {
           </div>
           <div className="form-group">
             <label className="form-label">Mot de passe {editItem?'':  <span className="form-req">*</span>}</label>
-            <input type="password" className="form-control" placeholder={editItem?'(laisser vide = inchangé)':'Min. 6 caractères'}
-              {...register('password', editItem?{}:{required:true,minLength:6})}/>
+            <input type="password" className="form-control" placeholder={editItem?'(laisser vide = inchangé)':'Min. 8 caractères, pas trop proche du nom'}
+              {...register('password', editItem?{}:{required:true,minLength:8})}/>
           </div>
         </div>
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-xs text-brand-blue">

@@ -106,7 +106,8 @@ export default function Profile() {
 
   const savePassword = async (data) => {
     if (data.newPass !== data.confirmPass) { toast.error('Les mots de passe ne correspondent pas'); return }
-    if (data.newPass.length < 6) { toast.error('Minimum 6 caractères'); return }
+    // Même règle que le serveur (AUTH_PASSWORD_VALIDATORS) : 8 caractères minimum
+    if (data.newPass.length < 8) { toast.error('Minimum 8 caractères'); return }
     confirm({
       icon:'cle', type:'warning', title:'Changer le mot de passe',
       msg:'Votre mot de passe sera changé. Vous devrez vous reconnecter.',
@@ -132,7 +133,7 @@ export default function Profile() {
   const strColors = ['','bg-brand-red','bg-orange','bg-orange','bg-brand-green']
   const strLabels = ['','Très faible','Faible','Moyen','Fort']
   const reqs = [
-    { label:'Au moins 6 caractères',         ok: newPassVal.length >= 6     },
+    { label:'Au moins 8 caractères',         ok: newPassVal.length >= 8     },
     { label:'Au moins 1 majuscule',           ok: /[A-Z]/.test(newPassVal)   },
     { label:'Au moins 1 chiffre',             ok: /[0-9]/.test(newPassVal)   },
     { label:'Au moins 1 caractère spécial',   ok: /[^A-Za-z0-9]/.test(newPassVal) },
@@ -242,7 +243,7 @@ export default function Profile() {
                   <div className="form-group">
                     <label className="form-label">Nouveau mot de passe <span className="form-req">*</span></label>
                     <div className="relative">
-                      <input type={showNew?'text':'password'} className="form-control pr-10" placeholder="Min. 6 caractères" {...regPass('newPass',{required:true,minLength:6})} />
+                      <input type={showNew?'text':'password'} className="form-control pr-10" placeholder="Min. 8 caractères" {...regPass('newPass',{required:true,minLength:8})} />
                       <button type="button" onClick={()=>setShowNew(s=>!s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">{showNew?<EyeOff size={14}/>:<Eye size={14}/>}</button>
                     </div>
                     {/* Strength */}

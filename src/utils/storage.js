@@ -1,30 +1,6 @@
-// ─── LocalStorage helpers ───────────────────────────────────────
-export function getData(key, def = null) {
-  try {
-    const raw = localStorage.getItem('sitrac_' + key)
-    return raw ? JSON.parse(raw) : def
-  } catch { return def }
-}
-
-export function setData(key, val) {
-  try { localStorage.setItem('sitrac_' + key, JSON.stringify(val)) } catch {}
-}
-
-// ─── Audit log ─────────────────────────────────────────────────
-export function logAction(action, table, detail, data = null) {
-  const user = getData('auth', null)
-  const logs = getData('audit', [])
-  logs.unshift({
-    id: Date.now() + Math.random(),
-    ts: new Date().toISOString(),
-    action, table, detail,
-    user: user?.login || '?',
-    dept: user?.dept  || '?',
-    data,
-  })
-  if (logs.length > 500) logs.length = 500
-  setData('audit', logs)
-}
+// Utilitaires de formatage (montants, dates).
+// Le stockage localStorage du prototype (getData/setData/logAction, store/dataStore.js)
+// a été retiré : les données et le journal d'audit sont désormais gérés par l'API Django.
 
 // ─── Format helpers ─────────────────────────────────────────────
 export function fmt(n) {

@@ -2,7 +2,7 @@
  * SITRAC — API du référentiel des prestataires.
  * Fichier séparé de utils/api.js pour ne pas avoir à modifier ce dernier.
  */
-import { api } from './api'
+import { api, toutesLesPages } from './api'
 
 export const CATEGORIES = [
   ['hebergement',  'Hébergement'],
@@ -27,7 +27,7 @@ export const SAISONS = [['toute_annee', "Toute l'année"], ['haute', 'Haute sais
 export const MODES_PAIEMENT = ['Virement', 'Espèces', 'Mobile Money', 'Chèque', 'Carte bancaire']
 
 export const prestatairesAPI = {
-  liste:        (params = '')  => api.get(`/prestataires/${params}`),
+  liste:        (params = '')  => toutesLesPages(`/prestataires/${params}`),
   fiche:        (id)           => api.get(`/prestataires/${id}/`),
   creer:        (data)         => api.post('/prestataires/', data),
   modifier:     (id, data)     => api.patch(`/prestataires/${id}/`, data),

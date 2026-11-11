@@ -2,7 +2,7 @@
  * SITRAC — API des prospects (demandes de devis).
  * Fichier séparé de utils/api.js pour ne pas avoir à modifier ce dernier.
  */
-import { api } from './api'
+import { api, toutesLesPages } from './api'
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
 
@@ -15,7 +15,7 @@ export const SOURCES_PROSPECT = [
 ]
 
 export const prospectsAPI = {
-  liste:        (params = '') => api.get(`/prospects/${params}`),
+  liste:        (params = '') => toutesLesPages(`/prospects/${params}`),
   creer:        (data)        => api.post('/prospects/', data),
   modifier:     (id, data)    => api.patch(`/prospects/${id}/`, data),
   supprimer:    (id)          => api.delete(`/prospects/${id}/`),
