@@ -1,6 +1,7 @@
 import { useEffect, lazy, Suspense } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from './store/authStore'
+import { useChatbotStore } from './store/chatbotStore'
 
 
 // Communes
@@ -8,7 +9,6 @@ import Login           from './pages/Login'
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 const Notifications = lazy(() => import('./pages/Notifications'))
 const Profile = lazy(() => import('./pages/Profile'))
-const Chatbot = lazy(() => import('./pages/Chatbot'))
 const Messages = lazy(() => import('./pages/Messages'))
 const CarteClients = lazy(() => import('./pages/Sales/CarteClients'))
 
@@ -102,6 +102,12 @@ const FINANCE = ['Finance','Administration']
 const ADMIN   = ['Administration']
 const SUPER   = ['Superviseur','Administration']
 
+function OuvrirAssistant() {
+  const ouvrir = useChatbotStore(s => s.ouvrir)
+  useEffect(() => { ouvrir() }, [ouvrir])
+  return <Navigate to="/dashboard" replace />
+}
+
 export default function App() {
   const { initTheme, user } = useAuthStore()
   useEffect(() => { initTheme() }, [])
@@ -116,7 +122,8 @@ export default function App() {
       <Route path="/dashboard"     element={<RequireAuth><Dashboard /></RequireAuth>} />
       <Route path="/notifications" element={<RequireAuth><Notifications /></RequireAuth>} />
       <Route path="/profile"       element={<RequireAuth><Profile /></RequireAuth>} />
-      <Route path="/chatbot"       element={<RequireAuth><Chatbot /></RequireAuth>} />
+      {/* SITRA-BOT est une bulle flottante : l'ancienne adresse ouvre la bulle sur le tableau de bord */}
+      <Route path="/chatbot"       element={<RequireAuth><OuvrirAssistant /></RequireAuth>} />
       <Route path="/messages"      element={<RequireAuth><Messages /></RequireAuth>} />
 
       {/* Sales */}

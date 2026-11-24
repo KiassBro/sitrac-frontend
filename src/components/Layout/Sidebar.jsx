@@ -9,7 +9,7 @@ import {
   Users, Car, BarChart2, ClipboardList, Package, FileCheck,
   CreditCard, FolderOpen, Receipt, Shield, Settings,
   History, Database, PlusCircle, Edit, Trash2,
-  LogOut, Folder, Bot, Handshake, Building2, CalendarRange, Inbox, Star, FileSpreadsheet,
+  LogOut, Folder, Handshake, Building2, CalendarRange, Inbox, Star, FileSpreadsheet,
   Briefcase, MessagesSquare, Globe2
 } from 'lucide-react'
 
@@ -275,21 +275,6 @@ export default function Sidebar() {
           className={({ isActive }) => `sidebar-link ${isActive?'active':''}`}>
           <User size={17} className="flex-shrink-0"/>
           {!sidebarCollapsed && <span>Mon Profil</span>}
-        </NavLink>
-
-        {/* NOUVEAU — Assistant IA visible par tous */}
-        <NavLink to="/chatbot"
-          className={({ isActive }) => `sidebar-link ${isActive?'active':''}`}>
-          <Bot size={17} className="flex-shrink-0 text-orange"/>
-          {!sidebarCollapsed && (
-            <span className="flex items-center gap-2 flex-1">
-              Assistant IA
-              <span className="text-[9px] font-bold bg-orange/10 text-orange
-                px-1.5 py-0.5 rounded-full border border-orange/20">
-                NOUVEAU
-              </span>
-            </span>
-          )}
         </NavLink>
 
         {/* ── Liens spécifiques au département ── */}

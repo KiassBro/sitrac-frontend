@@ -2,6 +2,7 @@ import { useAuthStore } from '../../store/authStore'
 import Sidebar from './Sidebar'
 import Topbar  from './Topbar'
 import ConfirmDialog from '../UI/ConfirmDialog'
+import ChatbotWidget from '../Chatbot/ChatbotWidget'
 
 export default function Layout({ children, breadcrumb }) {
   const { sidebarCollapsed } = useAuthStore()
@@ -27,6 +28,7 @@ export default function Layout({ children, breadcrumb }) {
           {children}
         </main>
       </div>
+      <ChatbotWidget />
       <ConfirmDialog />
     </div>
   )

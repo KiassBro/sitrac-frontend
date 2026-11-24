@@ -73,13 +73,6 @@ export default function Login() {
           <div className="lg-visuel-image" style={{ backgroundImage: `url(${fondBaobabs})` }}/>
           <div className="lg-visuel-voile"/>
 
-          <div className="lg-visuel-haut lg-entree" style={{ '--delai': '0.1s' }}>
-            <span className="lg-pastille">
-              <span className="lg-pastille-point"/>
-              SITRAC · Version 2.0
-            </span>
-          </div>
-
           <div className="lg-visuel-contenu">
             <p className="lg-surtitre lg-entree" style={{ '--delai': '0.25s' }}>
               Ramartour Madagascar<span className="lg-surtitre-suite"> · Agence de tourisme</span>
@@ -286,33 +279,9 @@ const STYLES = `
   .lg-visuel-voile {
     position: absolute; inset: 0; z-index: -1;
     background:
-      linear-gradient(180deg, rgba(10,12,24,.45) 0%, rgba(10,12,24,0) 28%),
       linear-gradient(90deg, rgba(10,10,20,.35) 0%, rgba(10,10,20,0) 60%),
       linear-gradient(0deg, rgba(10,10,20,.88) 0%, rgba(10,10,20,.55) 34%, rgba(10,10,20,0) 64%);
   }
-  .lg-visuel-haut { position: absolute; top: 40px; left: 56px; }
-  .lg-pastille {
-    display: inline-flex; align-items: center; gap: 8px;
-    padding: 7px 14px;
-    border-radius: 999px;
-    background: rgba(255,255,255,.12);
-    border: 1px solid rgba(255,255,255,.22);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    font-size: 11.5px; font-weight: 600; letter-spacing: 1.4px; text-transform: uppercase;
-  }
-  .lg-pastille-point {
-    width: 7px; height: 7px; border-radius: 50%;
-    background: #4ADE80;
-    box-shadow: 0 0 0 0 rgba(74,222,128,.6);
-    animation: lg-pouls 2.4s infinite;
-  }
-  @keyframes lg-pouls {
-    0%   { box-shadow: 0 0 0 0 rgba(74,222,128,.55); }
-    70%  { box-shadow: 0 0 0 9px rgba(74,222,128,0); }
-    100% { box-shadow: 0 0 0 0 rgba(74,222,128,0); }
-  }
-
   .lg-visuel-contenu { max-width: 600px; }
   .lg-surtitre {
     display: flex; align-items: center; gap: 12px;
@@ -530,7 +499,6 @@ const STYLES = `
   /* ── Tablette ─────────────────────────────────────── */
   @media (max-width: 1100px) {
     .lg-visuel { padding: 40px; }
-    .lg-visuel-haut { left: 40px; top: 32px; }
     .lg-panneau { padding: 40px 36px; }
   }
 
@@ -542,7 +510,6 @@ const STYLES = `
       min-height: 300px; height: 38vh;
       padding: 28px 24px 52px;
     }
-    .lg-visuel-haut { top: 20px; left: 24px; }
     .lg-surtitre { margin-bottom: 10px; font-size: 10.5px; letter-spacing: 2px; }
     .lg-surtitre::before { width: 22px; }
     .lg-surtitre-suite { display: none; }

@@ -14,6 +14,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <App />
         <Toaster
           position="bottom-right"
+          containerStyle={{ bottom: 96 }}   // au-dessus de la bulle SITRA-BOT
           toastOptions={{
             duration: 3500,
             style: { fontFamily:'Inter, sans-serif', fontSize:'13px', borderRadius:'10px' },

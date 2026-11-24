@@ -1,15 +1,13 @@
-import { Loader2, WifiOff, RefreshCw } from 'lucide-react'
+import { WifiOff, RefreshCw } from 'lucide-react'
+import PageLoader from './PageLoader'
 
 /**
  * Composant affiché pendant le chargement API
  */
-export function ApiLoader({ text = 'Chargement...' }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-      <Loader2 size={36} className="animate-spin text-orange mb-4" />
-      <span className="text-sm font-medium">{text}</span>
-    </div>
-  )
+export function ApiLoader({ text = 'Chargement' }) {
+  // Les anciens appels passent parfois « Chargement... » : on retire les points
+  // car le composant les anime lui-même.
+  return <PageLoader plein={false} text={String(text).replace(/[.…]+$/, '')} />
 }
 
 /**

@@ -7,9 +7,42 @@
     <title>SITRAC — Ramartour Madagascar</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <!-- Écran de chargement affiché avant le démarrage de React (remplacé automatiquement) -->
+    <style>
+      #chargement-initial {
+        position: fixed; inset: 0; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; background: #F5F7FA;
+        font-family: Montserrat, system-ui, sans-serif;
+      }
+      #chargement-initial .logo {
+        width: 160px; height: 128px; display: flex;
+        align-items: center; justify-content: center;
+        animation: ci-flotte 1.6s ease-in-out infinite;
+      }
+      #chargement-initial .logo img { width: 100%; height: 100%; object-fit: contain; }
+      #chargement-initial .ombre {
+        width: 80px; height: 8px; margin-top: 12px; border-radius: 999px; background: #000;
+        animation: ci-ombre 1.6s ease-in-out infinite;
+      }
+      #chargement-initial p { margin-top: 32px; font-size: 24px; font-weight: 700; color: #9CA3AF; }
+      #chargement-initial p span { animation: ci-point 1.2s infinite; }
+      #chargement-initial p span:nth-child(2) { animation-delay: .2s; }
+      #chargement-initial p span:nth-child(3) { animation-delay: .4s; }
+      @keyframes ci-flotte { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-8px) scale(1.04); } }
+      @keyframes ci-ombre  { 0%,100% { transform: scaleX(1); opacity: .18; } 50% { transform: scaleX(.75); opacity: .08; } }
+      @keyframes ci-point  { 0%,20% { opacity: 0; } 40%,100% { opacity: 1; } }
+      html.dark #chargement-initial { background: #030712; }
+      html.dark #chargement-initial p { color: #6B7280; }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="chargement-initial" role="status">
+        <div class="logo"><img src="/logo-transparent.png" alt="Ramartour Madagascar" /></div>
+        <div class="ombre"></div>
+        <p>Chargement<span>.</span><span>.</span><span>.</span></p>
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
